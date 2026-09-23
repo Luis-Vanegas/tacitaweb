@@ -1,0 +1,29 @@
+# Dependencias
+**/node_modules
+
+# Builds
+**/dist
+**/dist-ssr
+**/build
+**/coverage
+**/.tmp
+
+# Entorno
+.env
+.env.local
+**/.env
+**/.env.local
+
+# Logs
+**/*.log
+npm-debug.log*
+
+# Sistema operativo / editor
+.DS_Store
+**/*.local
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# Sonar (analisis local)
+.sonar
