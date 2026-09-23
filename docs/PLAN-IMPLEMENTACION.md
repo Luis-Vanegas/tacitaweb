@@ -149,20 +149,23 @@ Muéstrame el plan antes de ejecutar y marca los checks al terminar.
 
 ---
 
-### Fase 3 — Backend núcleo ⬜
+### Fase 3 — Backend núcleo ⬜ (en curso: config + DataSource + baseline + entidades + common + health ✅; módulos de negocio pendientes)
 
-- [ ] `config/`: validación de env al arrancar (falla si falta algo): `DATABASE_URL`, `DATABASE_SSL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `CORS_ORIGIN`.
-- [ ] TypeORM: `schema: 'core'`, `synchronize: false`, `migrationsTableName: 'typeorm_migrations'` en `core`, SSL.
-      Conexión por **Session pooler (5432)** (copiar la cadena desde Supabase → Connect).
-- [ ] Migración TypeORM *baseline* que ejecuta `001–003` + `100_seed_excel`. En Supabase ya están aplicadas → registrarla como aplicada (`migration:run --fake`, verificar el flag en la versión instalada). En la BD de tests se ejecuta completa.
-- [ ] Entidades TypeORM mapeando las tablas **tal cual** (nombres snake_case, sin cambiar el esquema) + entidades de vista (`@ViewEntity`) para las 3 vistas.
-- [ ] `common/`: `JwtAuthGuard` global + `@Public`, `RolesGuard`, `FrenteScopeGuard`, `AllExceptionsFilter` (unique → 409, FK → 409, check → 400), `ValidationPipe({ whitelist, forbidNonWhitelisted, transform })`, `helmet`, CORS con lista blanca.
-- [ ] `auditoria.helper.ts`: `ejecutarConAuditoria(usuarioId, fn)` = transacción + `set_config('app.usuario_id', …, true)`. **Toda escritura pasa por aquí.**
-- [ ] Módulos `auth`, `usuarios`, `catalogos`, `frentes`, `procesos`, `seguimiento`, `personal`, `health` con los endpoints de §2 (menos export y adjuntos).
+- [x] `config/`: validación de env al arrancar (falla si falta algo): `DATABASE_URL`, `DATABASE_SSL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `CORS_ORIGIN`. (`src/config/env.validation.ts`, enganchado en `ConfigModule.forRoot({ validate })`.)
+- [x] TypeORM: `schema: 'core'`, `synchronize: false`, `migrationsTableName: 'typeorm_migrations'` en `core`, SSL. (`src/config/database.config.ts` + `TypeOrmModule.forRootAsync` en `app.module.ts`.)
+      Conexión por **Session pooler (5432)**: la cadena la trae `back/.env` (no verificada en esta sesión, ver nota abajo).
+- [x] Migración TypeORM *baseline* escrita (`src/database/migrations/1790185898686-Baseline.ts`, ejecuta `001–003` + `100_seed_excel`) y `src/database/data-source.ts` para la CLI. **Pendiente registrarla de verdad**: `migration:run --fake` contra Supabase falló por `password authentication failed for user "postgres"` (ver nota abajo) — no se tocó el esquema. Tampoco se pudo probar completa contra Postgres local (Docker Desktop no estaba corriendo en esta sesión).
+- [x] Entidades TypeORM mapeando las 16 tablas **tal cual** (nombres snake_case, sin cambiar el esquema) + 3 `@ViewEntity` de solo lectura para las vistas. (`src/database/entities/`.)
+- [ ] `common/`: `JwtAuthGuard` global + `@Public` ✅, `RolesGuard` ✅, `FrenteScopeGuard` ✅ (implementados y con tests unitarios, roles/scope aún sin usar en ningún controller real), `AllExceptionsFilter` ✅ (unique → 409, FK → 409, check → 400). Falta `ValidationPipe({ whitelist, forbidNonWhitelisted, transform })`, `helmet` y CORS con lista blanca en `main.ts` (se deja para cuando existan DTOs reales, fuera del alcance de este sub-paso).
+- [x] `auditoria.helper.ts`: `ejecutarConAuditoria(dataSource, usuarioId, fn)` = transacción + `set_config('app.usuario_id', …, true)`. (`src/common/database/auditoria.helper.ts`, con tests.)
+- [ ] Módulos `auth`, `usuarios`, `catalogos`, `frentes`, `procesos`, `seguimiento`, `personal` con los endpoints de §2 (menos export y adjuntos) — **pendientes** (bloqueado por la decisión de rate limit en `/auth/login`).
+  - [x] Módulo `health`: `GET /api/v1/health` (público, `SELECT 1` contra el `DataSource`, 503 si falla). Test unitario ✅; test e2e escrito (`test/health.e2e-spec.ts`) pero no corrido (sin Docker en esta sesión).
 - [ ] Script `npm run crear-admin` (email + password por prompt, nunca hardcodeado).
 - [ ] Rate limit en `/auth/login` (proponer `@nestjs/throttler`; pedir aprobación por no estar en el stack).
-- [ ] Tests unitarios de servicios (lógica de estado, scope de frentes, paginación).
+- [ ] Tests unitarios de servicios (lógica de estado, scope de frentes, paginación) — no hay servicios de negocio todavía.
 - [ ] Tests e2e: login, `GET /frentes` devuelve 7, `GET /frentes/sif/procesos` devuelve 34, EDITOR sin frente recibe 403, cambio de estado crea seguimiento y fila en `auditoria`.
+
+> **Nota de esta sesión:** Docker Desktop no estaba corriendo (el CLI `docker`/`docker compose` sí están instalados), así que no se pudo levantar `docker-compose.test.yml` para correr la migración baseline completa ni el e2e de health. Contra Supabase (producción) se intentó **únicamente** `migration:run --fake` (nunca `migration:run` normal): la conexión llegó hasta el handshake TLS y Postgres respondió `password authentication failed for user "postgres"` — es decir, no se ejecutó ningún DDL/DML, pero tampoco quedó registrada la baseline. Revisar `DATABASE_URL` en `back/.env` (probablemente falta el sufijo `.<project-ref>` en el usuario que exige el Session/Transaction pooler de Supabase, o la contraseña quedó desactualizada). `npm run lint` y `npm test` (unitarios, sin BD) están en verde.
 
 **Criterio de salida:** e2e en verde contra Postgres local; `GET /frentes` en Supabase devuelve los mismos números que `v_resumen_frente`.
 
