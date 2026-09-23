@@ -10,6 +10,13 @@ import { databaseConfig } from './config/database.config';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { HealthModule } from './modules/health/health.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { UsuariosModule } from './modules/usuarios/usuarios.module';
+import { CatalogosModule } from './modules/catalogos/catalogos.module';
+import { FrentesModule } from './modules/frentes/frentes.module';
+import { ProcesosModule } from './modules/procesos/procesos.module';
+import { SeguimientoModule } from './modules/seguimiento/seguimiento.module';
+import { PersonalModule } from './modules/personal/personal.module';
 
 @Module({
   imports: [
@@ -33,6 +40,13 @@ import { HealthModule } from './modules/health/health.module';
       }),
     }),
     HealthModule,
+    AuthModule,
+    UsuariosModule,
+    CatalogosModule,
+    FrentesModule,
+    ProcesosModule,
+    SeguimientoModule,
+    PersonalModule,
   ],
   controllers: [AppController],
   providers: [
