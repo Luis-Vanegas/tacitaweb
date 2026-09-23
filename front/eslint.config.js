@@ -23,6 +23,9 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
+      // Parámetros de reducers de Redux Toolkit que solo existen para tipar
+      // el `action` (ej. PayloadAction<T> sin leer el payload en el reducer).
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
   },
 )

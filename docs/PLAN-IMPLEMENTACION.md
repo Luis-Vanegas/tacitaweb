@@ -3,7 +3,7 @@
 > Cómo usarlo: abre Claude Code en la raíz `TacitaWeb/`, que ya tiene `CLAUDE.md`.
 > Ejecuta **una fase por sesión** pegando el *prompt* de la fase. Cada fase termina
 > con lint + tests en verde y los checks marcados aquí.
-> Estado: Fase 1 (BD) ✅ · Fase 2 (scaffolding) ✅ · resto ⬜
+> Estado: Fase 1 (BD) ✅ · Fase 2 (scaffolding) ✅ · Fase 3 (backend núcleo, e2e pendiente) ⬜ · Fase 4 (frontend menú+detalle, Playwright real pendiente) ⬜ · resto ⬜
 > Al terminar de pasarlo a tareas, este archivo se puede mover a `docs/archivo/`.
 
 ---
@@ -182,18 +182,23 @@ Empieza por config + DataSource + migración baseline y muéstrame el plan de m�
 
 ---
 
-### Fase 4 — Frontend: menú de frentes + detalle ⬜
+### Fase 4 — Frontend: menú de frentes + detalle ⬜ (todo hecho y verificado en navegador contra un mock; Playwright real sigue bloqueado)
 
-- [ ] `theme/`: tokens de CLAUDE.md, tema MUI (tipografía Roboto, radios 16, sombras suaves), modo claro.
-- [ ] `shared/api/http.ts`: axios con base `/api/v1`, access token en memoria (no localStorage), refresh automático en 401 con cola de reintentos.
-- [ ] Store: `auth`, `catalogos`, `frentes`, `procesos` (slices + sagas; estados `idle/loading/succeeded/failed`).
-- [ ] Router: `/login`, `/` (menú), `/frentes/:slug`, `/procesos/:id`, `/admin/*`; `ProtectedRoute` por rol.
-- [ ] **MenuFrentesPage** (estilo captura "Proyectos Estratégicos"): fondo navy, pill azul "Tacita de Plata", grid de 7 `FrenteCard` (borde superior con `frente.color`, ícono MUI de `frente.icono`, nombre, chips: procesos, alertas, personal). Grid 4→3→2→1 columnas.
-- [ ] **FrenteDetallePage** (estilo "Reporte General"): header degradado con botones (inicio, refrescar, filtros, exportar); fila de `KpiCard` (total procesos, en ejecución, precontractual, alertas, próximos a vencer ≤30 d, personal actual/pendiente); `ProcesoStepper` horizontal con conteo por estado (clic = filtra); pestañas **Procesos · Personal · Bitácora**.
-- [ ] **ProcesosTab**: tabla (desktop) / tarjetas (móvil) agrupadas por actividad; columnas: actividad, contratista, N.º contrato / necesidad, estado (`EstadoChip` con color de BD), inicio–fin, `PlazoBar` (pct_plazo + días restantes, rojo si vencido), SECOP (link externo `rel="noopener noreferrer"`), última nota. Filtros + búsqueda con debounce.
-- [ ] Estados de carga (skeletons), vacío y error en todas las vistas.
-- [ ] Accesibilidad: contraste AA, foco visible, tarjetas navegables con teclado, `aria-label` en íconos.
-- [ ] Tests Vitest de componentes clave; Playwright: login → menú → SIF → filtrar "Alerta precontractual" → abrir proceso, en 1440 px y 390 px.
+- [x] `theme/`: tokens de CLAUDE.md, tema MUI (tipografía Roboto, radios 16, sombras suaves), modo claro. (`front/src/app/theme/{tokens,theme}.ts`.)
+- [x] `shared/api/http.ts`: axios con base `/api/v1` (`VITE_API_URL` si existe), access token en memoria (`shared/api/tokenStore.ts`, no localStorage), refresh automático en 401 con cola de reintentos (una sola promesa de refresh compartida entre requests concurrentes).
+- [x] Store: `auth`, `catalogos`, `frentes`, `procesos` (slices + sagas; estados `idle/loading/succeeded/failed`). `auth` agrega bootstrap (refresh silencioso + `/auth/me` al montar la app) para restaurar sesión tras un reload.
+- [x] Router (`app/router.tsx`, `createBrowserRouter`): `/login`, `/` (menú), `/frentes/:slug`, `/procesos/:id` (placeholder Fase 5), `/admin/*` (placeholder Fase 5); `ProtectedRoute` redirige a `/login` sin sesión y valida `rolesPermitidos`.
+- [x] **MenuFrentesPage**: fondo navy, pill azul "Tacita de Plata", grid de 7 `FrenteCard` (borde superior con `frente.color`, ícono MUI resuelto dinámicamente desde `frente.icono` con fallback si no existe, chips procesos/alertas/personal). Grid 4→3→2→1 columnas responsive, tarjetas con `tabIndex`/`onKeyDown` Enter-Espacio y `aria-label`.
+- [x] **FrenteDetallePage**: header degradado con botones inicio/refrescar/filtros y exportar deshabilitado (tooltip "Próximamente", el endpoint no existe); fila de `KpiCard` (6 KPIs de §4); `ProcesoStepper` horizontal con conteo por estado (clic filtra `ProcesosTab`, toggle); tabs Procesos/Personal/Bitácora sincronizadas con `?tab=` en la URL (deep-linking), Personal y Bitácora como placeholder "Próximamente" (Fase 5).
+- [x] **ProcesosTab**: tabla agrupada por actividad (desktop) / tarjetas agrupadas (móvil, `useIsMobile`), columnas según §4 (`EstadoChip`, `PlazoBar` con rojo si `diasRestantes < 0`, link SECOP `target="_blank" rel="noopener noreferrer"`). Filtros fase/dependencia/tipo + búsqueda con `useDebounce`.
+- [x] Estados de carga (skeletons MUI), vacío (`EmptyState`) y error (`ErrorState` con reintentar) en Menú, Detalle y ProcesosTab.
+- [x] Accesibilidad: foco visible AA (`:focus-visible` con outline `primary` vía `CssBaseline` overrides), texto claro sobre navy (nunca gris claro), tarjetas navegables por teclado, `aria-label` en iconos e inputs.
+- [x] Tests Vitest: `EstadoChip`, `PlazoBar`, `FrenteCard` (12 tests, todos en verde).
+- [ ] Playwright (`front/e2e/login-menu-sif.spec.ts` + `front/playwright.config.ts`, 1440 px y 390 px): **escrito pero NO corrido** — el backend real (NestJS + Supabase) sigue sin poder levantar en esta sesión (misma causa que Fase 3: password auth contra Supabase, Docker Desktop no disponible). Correr `npm run test:e2e` en `front/` en cuanto el backend esté arriba, con un usuario creado por `npm run crear-admin`.
+
+**Verificación manual en navegador (esta sesión):** como el backend real no levantaba, se armó un servidor `http` descartable (solo módulo nativo, fuera del repo, en el scratchpad de la sesión) que sirve JSON con la forma exacta de `/auth/login`, `/auth/refresh`, `/auth/me`, `/catalogos`, `/frentes`, `/frentes/:slug`, `/frentes/:slug/procesos`, apuntado desde un `front/.env.local` temporal (gitignorado, borrado al terminar). Con eso se navegó el flujo completo (login automático vía bootstrap, menú de 7 frentes, detalle de SIF, stepper filtrando la tabla, responsive en 390 px) y aparecieron dos bugs reales que NO se habrían visto solo compilando:
+1. `catalogosSaga` nunca pegaba a `GET /catalogos`: el guard comparaba contra `estado === 'loading'`, pero el reducer síncrono ya deja el estado en `'loading'` antes de que el saga corra, así que el guard se disparaba siempre. Corregido en `front/src/features/catalogos/catalogosSaga.ts` (el guard ahora solo chequea `'succeeded'`).
+2. El `index.css` heredado del scaffold de Vite (`body { display:flex; place-items:center }`, sin ancho en `#root`) encogía toda la app a ~430 px centrados en vez de full-bleed — invisible en cualquier layout de ejemplo con `<div className="card">`, pero rompía el fondo navy de `LoginPage`/`MenuFrentesPage`. Corregido en `front/src/index.css` (reset mínimo, `html/body/#root` a 100% de ancho/alto) y se aprovechó para cargar Roboto real (`front/index.html`, antes solo caía al sans-serif del sistema) y limpiar `App.css`/`assets/react.svg` sin uso.
 
 **Prompt:**
 ```

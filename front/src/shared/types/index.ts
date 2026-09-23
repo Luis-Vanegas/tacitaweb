@@ -1,0 +1,5 @@
+export * from './comun'
+export * from './auth'
+export * from './catalogos'
+export * from './frente'
+export * from './proceso'
