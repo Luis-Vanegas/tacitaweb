@@ -8,6 +8,7 @@ import {
   Param,
   Put,
   Query,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import { RolesGuard } from '@/common/guards/roles.guard';
@@ -19,8 +20,6 @@ import { FrentesService } from './frentes.service';
 import { FiltroProcesosFrenteDto } from './dto/filtro-procesos-frente.dto';
 import { VincularProcesoFrenteDto } from './dto/vincular-proceso-frente.dto';
 
-// GET /frentes/:slug/export (Excel) queda fuera de esta fase (5/6): no se
-// toca acá ni se referencia en el routing.
 @Controller('frentes')
 export class FrentesController {
   constructor(private readonly frentesService: FrentesService) {}
@@ -46,6 +45,16 @@ export class FrentesController {
   @Get(':slug/personal')
   obtenerPersonal(@Param('slug') slug: string) {
     return this.frentesService.obtenerPersonal(slug);
+  }
+
+  @Get(':slug/export')
+  async exportar(@Param('slug') slug: string): Promise<StreamableFile> {
+    const buffer = await this.frentesService.exportarExcel(slug);
+    const fecha = new Date().toISOString().slice(0, 10);
+    return new StreamableFile(buffer, {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      disposition: `attachment; filename="${slug}-${fecha}.xlsx"`,
+    });
   }
 
   @UseGuards(RolesGuard)

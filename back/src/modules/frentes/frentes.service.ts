@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
+import { Workbook } from 'exceljs';
 import { Frente } from '@/database/entities/frente.entity';
 import { VResumenFrente } from '@/database/entities/views/resumen-frente.view-entity';
 import { VProcesoDetalle } from '@/database/entities/views/proceso-detalle.view-entity';
@@ -238,6 +239,98 @@ export class FrentesService {
         );
       }
     });
+  }
+
+  // GET /frentes/:slug/export — Excel con procesos y personal del frente,
+  // mismos joins que listarProcesos()/obtenerPersonal() pero sin paginación
+  // (el reporte se descarga completo).
+  async exportarExcel(slug: string): Promise<Buffer> {
+    const frente = await this.resolverFrente(slug);
+
+    const procesos = await this.procesoDetalleRepository
+      .createQueryBuilder('v')
+      .innerJoin(FrenteProceso, 'fp', 'fp.procesoId = v.id')
+      .where('fp.frenteId = :frenteId', { frenteId: frente.id })
+      .orderBy('v.actividad', 'ASC')
+      .addOrderBy('v.fechaInicio', 'ASC')
+      .getMany();
+
+    const vinculosPersonal = await this.frenteTipoPersonalRepository.find({
+      where: { frenteId: frente.id },
+    });
+    const tipoIds = vinculosPersonal.map((v) => v.tipoPersonalId);
+    const personal = tipoIds.length
+      ? await this.personalVigenteRepository.find({
+          where: { tipoPersonalId: In(tipoIds) },
+          order: { tipoPersonal: 'ASC' },
+        })
+      : [];
+
+    return this.construirExcelFrente(procesos, personal);
+  }
+
+  private async construirExcelFrente(
+    procesos: VProcesoDetalle[],
+    personal: VPersonalVigente[],
+  ): Promise<Buffer> {
+    const workbook = new Workbook();
+
+    const hojaProcesos = workbook.addWorksheet('Procesos');
+    hojaProcesos.columns = [
+      { header: 'Actividad', key: 'actividad', width: 30 },
+      { header: 'Contratista', key: 'contratista', width: 30 },
+      { header: 'Tipo', key: 'tipo', width: 14 },
+      { header: 'N.º contrato', key: 'numeroContrato', width: 16 },
+      { header: 'N.º necesidad', key: 'numeroNecesidad', width: 16 },
+      { header: 'Estado', key: 'estado', width: 18 },
+      { header: 'Fase', key: 'fase', width: 16 },
+      { header: 'Fecha inicio', key: 'fechaInicio', width: 14 },
+      { header: 'Fecha terminación', key: 'fechaTerminacion', width: 16 },
+      { header: 'Días restantes', key: 'diasRestantes', width: 14 },
+      { header: '% plazo', key: 'pctPlazo', width: 10 },
+      { header: 'Link SECOP', key: 'linkSecop', width: 40 },
+    ];
+    hojaProcesos.getRow(1).font = { bold: true };
+    hojaProcesos.addRows(
+      procesos.map((p) => ({
+        actividad: p.actividad,
+        contratista: p.contratista ?? '',
+        tipo: p.tipo,
+        numeroContrato: p.numeroContrato ?? '',
+        numeroNecesidad: p.numeroNecesidad ?? '',
+        estado: p.estado,
+        fase: p.fase,
+        fechaInicio: p.fechaInicio ?? '',
+        fechaTerminacion: p.fechaTerminacion ?? '',
+        diasRestantes: p.diasRestantes ?? '',
+        pctPlazo: p.pctPlazo ?? '',
+        linkSecop: p.linkSecop ?? '',
+      })),
+    );
+
+    const hojaPersonal = workbook.addWorksheet('Personal');
+    hojaPersonal.columns = [
+      { header: 'Tipo de personal', key: 'tipoPersonal', width: 30 },
+      { header: 'Vigencia', key: 'vigencia', width: 12 },
+      { header: 'Actual', key: 'actual', width: 10 },
+      { header: 'Pendiente', key: 'pendiente', width: 12 },
+      { header: 'Meta', key: 'meta', width: 10 },
+      { header: 'Fecha final', key: 'fechaFinal', width: 14 },
+    ];
+    hojaPersonal.getRow(1).font = { bold: true };
+    hojaPersonal.addRows(
+      personal.map((p) => ({
+        tipoPersonal: p.tipoPersonal,
+        vigencia: p.vigencia,
+        actual: p.actual,
+        pendiente: p.pendiente ?? '',
+        meta: p.meta ?? '',
+        fechaFinal: p.fechaFinal ?? '',
+      })),
+    );
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(buffer);
   }
 
   private async resolverFrente(slug: string): Promise<Frente> {

@@ -1,4 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
+import { Workbook } from 'exceljs';
 import { FrentesService } from './frentes.service';
 import { CriterioFrenteProceso } from '@/database/entities/frente-proceso.entity';
 
@@ -158,6 +159,121 @@ describe('FrentesService', () => {
         service.desvincularProceso('sif', '10', 'admin-1'),
       ).rejects.toBeInstanceOf(NotFoundException);
       expect(queryRunner.rollbackTransaction).toHaveBeenCalled();
+    });
+  });
+
+  describe('exportarExcel', () => {
+    const construirQueryBuilder = (procesos: unknown[]) => ({
+      innerJoin: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue(procesos),
+    });
+
+    it('lanza 404 si el frente no existe', async () => {
+      frenteRepo.findOne.mockResolvedValueOnce(null);
+      await expect(service.exportarExcel('no-existe')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
+
+    it('arma el Excel con las hojas Procesos y Personal y sus columnas', async () => {
+      frenteRepo.findOne.mockResolvedValueOnce({ id: 1, slug: 'sif' });
+      procesoDetalleRepo.createQueryBuilder.mockReturnValueOnce(
+        construirQueryBuilder([
+          {
+            actividad: 'Poda de árboles',
+            contratista: 'Contratista S.A.S.',
+            tipo: 'CONTRATO',
+            numeroContrato: '4600108890',
+            numeroNecesidad: '56173',
+            estado: 'En ejecución',
+            fase: 'EJECUCION',
+            fechaInicio: '2025-01-10',
+            fechaTerminacion: '2025-12-31',
+            diasRestantes: 45,
+            pctPlazo: 60,
+            linkSecop: 'https://secop.gov.co/1',
+          },
+        ]),
+      );
+      frenteTipoPersonalRepo.find.mockResolvedValueOnce([
+        { frenteId: 1, tipoPersonalId: 7 },
+      ]);
+      personalVigenteRepo.find.mockResolvedValueOnce([
+        {
+          tipoPersonalId: 7,
+          tipoPersonal: 'Operarios de aseo',
+          vigencia: 2026,
+          actual: 30,
+          pendiente: 5,
+          meta: 35,
+          fechaFinal: '2026-12-31',
+        },
+      ]);
+
+      const buffer = await service.exportarExcel('sif');
+      expect(Buffer.isBuffer(buffer)).toBe(true);
+
+      const workbook = new Workbook();
+      // exceljs tipa load() con su propio `Buffer` (alias local de
+      // ArrayBuffer), incompatible en TS con el Buffer real de Node que
+      // devuelve writeBuffer() en runtime — cast necesario, es un problema
+      // conocido de sus tipos, no del código.
+      await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
+
+      const hojaProcesos = workbook.getWorksheet('Procesos');
+      expect(hojaProcesos).toBeDefined();
+      expect(hojaProcesos!.getRow(1).values as unknown[]).toEqual([
+        undefined,
+        'Actividad',
+        'Contratista',
+        'Tipo',
+        'N.º contrato',
+        'N.º necesidad',
+        'Estado',
+        'Fase',
+        'Fecha inicio',
+        'Fecha terminación',
+        'Días restantes',
+        '% plazo',
+        'Link SECOP',
+      ]);
+      expect(hojaProcesos!.getRow(2).getCell(1).value).toBe('Poda de árboles');
+      expect(hojaProcesos!.getRow(2).getCell(4).value).toBe('4600108890');
+      expect(hojaProcesos!.getRow(2).getCell(11).value).toBe(60);
+
+      const hojaPersonal = workbook.getWorksheet('Personal');
+      expect(hojaPersonal).toBeDefined();
+      expect(hojaPersonal!.getRow(1).values as unknown[]).toEqual([
+        undefined,
+        'Tipo de personal',
+        'Vigencia',
+        'Actual',
+        'Pendiente',
+        'Meta',
+        'Fecha final',
+      ]);
+      expect(hojaPersonal!.getRow(2).getCell(1).value).toBe(
+        'Operarios de aseo',
+      );
+      expect(hojaPersonal!.getRow(2).getCell(3).value).toBe(30);
+    });
+
+    it('deja la hoja Personal solo con encabezado si el frente no tiene tipos vinculados', async () => {
+      frenteRepo.findOne.mockResolvedValueOnce({ id: 1, slug: 'sif' });
+      procesoDetalleRepo.createQueryBuilder.mockReturnValueOnce(
+        construirQueryBuilder([]),
+      );
+      frenteTipoPersonalRepo.find.mockResolvedValueOnce([]);
+
+      const buffer = await service.exportarExcel('sif');
+      const workbook = new Workbook();
+      await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
+
+      expect(personalVigenteRepo.find).not.toHaveBeenCalled();
+      expect(workbook.getWorksheet('Personal')!.rowCount).toBe(1);
     });
   });
 });

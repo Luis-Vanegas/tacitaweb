@@ -218,7 +218,22 @@ Antes de codificar, propón el árbol de componentes y qué va en Redux vs estad
 - [ ] `NotaForm` para la bitácora.
 - [ ] **PersonalTab**: tarjetas por tipo (actual, pendiente, meta, fecha final, operadores), ECharts barras apiladas actual vs pendiente y comparativo 2025 vs 2026.
 - [ ] `FichaTecnicaPdf` (@react-pdf/renderer) del proceso y del frente.
-- [ ] Export Excel del frente (`GET /frentes/:slug/export`).
+- [x] Export Excel del frente (`GET /frentes/:slug/export`). Implementado en el
+      módulo `frentes` existente (`frentes.controller.ts`/`frentes.service.ts`),
+      sin módulo nuevo. Rol: todos los autenticados. `exceljs` (no estaba
+      instalado pese a figurar en el stack de `CLAUDE.md`; se agregó
+      `"exceljs": "^4.4.0"` a `back/package.json`). Dos hojas: "Procesos"
+      (`v_proceso_detalle` ⨝ `frente_proceso`, ordenada por actividad/fecha
+      inicio para lectura humana — no reusa el orden por defecto de
+      `GET /frentes/:slug/procesos`) y "Personal" (`v_personal_vigente` ⨝
+      `frente_tipo_personal`, mismo join que `obtenerPersonal()`). Respuesta
+      vía `StreamableFile` con `Content-Type`
+      `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` y
+      `Content-Disposition: attachment; filename="<slug>-<fecha-ISO>.xlsx"`.
+      404 si el slug no existe (mismo `resolverFrente()` que el resto del
+      controller). Test unitario del service con mocks de repositorio: arma
+      el buffer, lo vuelve a leer con `ExcelJS.Workbook#load` y verifica
+      encabezados y datos de ambas hojas.
 - [ ] Admin: usuarios + frentes asignados; vínculos manuales frente↔proceso; **resolver los pendientes de negocio de §0** desde aquí (enlazar interventorías, corregir contratista).
 
 **Prompt:**
