@@ -8,6 +8,9 @@ import Tabs from '@mui/material/Tabs'
 import Tab from '@mui/material/Tab'
 import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
+import Snackbar from '@mui/material/Snackbar'
+import Alert from '@mui/material/Alert'
+import CircularProgress from '@mui/material/CircularProgress'
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined'
 import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined'
 import FilterListOutlinedIcon from '@mui/icons-material/FilterListOutlined'
@@ -22,12 +25,25 @@ import { tokens } from '@/app/theme/tokens'
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/redux'
 import { ErrorState } from '@/shared/components/ErrorState'
 import { KpiCard } from '@/shared/components/KpiCard'
+import { PdfDownloadButton } from '@/shared/components/pdf/PdfDownloadButton'
+import { FrentePdfDocument } from '@/shared/components/pdf/FrentePdfDocument'
+import { http } from '@/shared/api/http'
+import { endpoints } from '@/shared/api/endpoints'
 import { catalogosRequest } from '@/features/catalogos/catalogosSlice'
 import { frenteDetalleRequest, limpiarFrenteDetalle } from './frentesSlice'
 import { ProcesoStepper } from './ProcesoStepper'
+import { PersonalTab } from './PersonalTab'
 import { ProcesosTab } from '@/features/procesos/ProcesosTab'
 
 type TabId = 'procesos' | 'personal' | 'bitacora'
+
+// Content-Disposition real que manda el backend (FrentesController.exportar):
+// `attachment; filename="<slug>-<fecha>.xlsx"`. Se parsea en vez de inventar
+// el nombre en el front, por si cambia el formato del lado del servidor.
+function nombreDesdeContentDisposition(header: string | undefined, fallback: string): string {
+  const match = header?.match(/filename="?([^"; ]+)"?/i)
+  return match?.[1] ?? fallback
+}
 
 export function FrenteDetallePage() {
   const { slug = '' } = useParams<{ slug: string }>()
@@ -36,6 +52,8 @@ export function FrenteDetallePage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [estadoIdFiltro, setEstadoIdFiltro] = useState<number | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [exportando, setExportando] = useState(false)
+  const [errorExportar, setErrorExportar] = useState<string | null>(null)
 
   const { estado, error, data } = useAppSelector((s) => s.frentes.detalle)
 
@@ -63,6 +81,32 @@ export function FrenteDetallePage() {
   function refrescar() {
     dispatch(frenteDetalleRequest(slug))
     setRefreshKey((k) => k + 1)
+  }
+
+  // Descarga directa del blob (no hay saga acá: es un side-effect de UI, no
+  // estado de dominio que otra parte de la app necesite leer). El nombre de
+  // archivo sale del Content-Disposition real del backend, nunca se inventa.
+  async function exportar() {
+    if (exportando) return // evita doble click mientras se genera
+    setExportando(true)
+    setErrorExportar(null)
+    try {
+      const respuesta = await http.get(endpoints.frentes.export(slug), { responseType: 'blob' })
+      const nombreArchivo = nombreDesdeContentDisposition(
+        respuesta.headers['content-disposition'],
+        `${slug}.xlsx`,
+      )
+      const url = window.URL.createObjectURL(respuesta.data as Blob)
+      const enlace = window.document.createElement('a')
+      enlace.href = url
+      enlace.download = nombreArchivo
+      enlace.click()
+      window.URL.revokeObjectURL(url)
+    } catch {
+      setErrorExportar('No se pudo exportar el frente. Intenta de nuevo.')
+    } finally {
+      setExportando(false)
+    }
   }
 
   return (
@@ -105,10 +149,26 @@ export function FrenteDetallePage() {
                 <FilterListOutlinedIcon />
               </IconButton>
             </Tooltip>
-            <Tooltip title="Próximamente">
+            {data && (
+              <PdfDownloadButton
+                document={<FrentePdfDocument frente={data} />}
+                fileName={`frente-${data.slug}.pdf`}
+                label="PDF"
+              />
+            )}
+            <Tooltip title="Exportar a Excel">
               <span>
-                <IconButton aria-label="Exportar (próximamente)" disabled sx={{ color: 'rgba(255,255,255,0.6)' }}>
-                  <FileDownloadOutlinedIcon />
+                <IconButton
+                  aria-label="Exportar frente a Excel"
+                  onClick={exportar}
+                  disabled={exportando}
+                  sx={{ color: '#fff' }}
+                >
+                  {exportando ? (
+                    <CircularProgress size={20} sx={{ color: '#fff' }} />
+                  ) : (
+                    <FileDownloadOutlinedIcon />
+                  )}
                 </IconButton>
               </span>
             </Tooltip>
@@ -163,13 +223,22 @@ export function FrenteDetallePage() {
         {tabActual === 'procesos' && slug && (
           <ProcesosTab key={refreshKey} slug={slug} estadoIdExterno={estadoIdFiltro} />
         )}
-        {tabActual === 'personal' && (
-          <Typography color="text.secondary">Próximamente (Fase 5).</Typography>
-        )}
+        {tabActual === 'personal' && slug && <PersonalTab slug={slug} />}
         {tabActual === 'bitacora' && (
           <Typography color="text.secondary">Próximamente (Fase 5).</Typography>
         )}
       </Box>
+
+      <Snackbar
+        open={!!errorExportar}
+        autoHideDuration={6000}
+        onClose={() => setErrorExportar(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="error" onClose={() => setErrorExportar(null)}>
+          {errorExportar}
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }

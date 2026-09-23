@@ -1,6 +1,7 @@
 // Espejo de core.v_proceso_detalle
 // (back/src/database/entities/views/proceso-detalle.view-entity.ts).
 import type { FaseProceso } from './catalogos'
+import type { Seguimiento } from './seguimiento'
 
 export type TipoProceso = 'PRINCIPAL' | 'INTERVENTORIA'
 
@@ -46,4 +47,50 @@ export interface FiltroProcesosFrente {
   tipo?: TipoProceso
   q?: string
   orden?: string
+}
+
+// Frente vinculado al proceso, tal como lo devuelve GET /procesos/:id.
+export interface ProcesoFrenteVinculado {
+  id: number
+  nombre: string
+  slug: string
+  criterio: string | null
+}
+
+// GET /procesos/:id (ProcesosService.obtenerDetalle): el detalle completo
+// más bitácora, interventorías vinculadas y frentes.
+export interface ProcesoFicha extends ProcesoDetalle {
+  bitacora: Seguimiento[]
+  interventorias: ProcesoDetalle[]
+  frentes: ProcesoFrenteVinculado[]
+}
+
+// Body de POST /procesos (CrearProcesoDto).
+export interface CrearProcesoPayload {
+  actividadId: number
+  estadoId: number
+  contratistaId?: number
+  tipo?: TipoProceso
+  procesoSupervisadoId?: string
+  numeroContrato?: string
+  numeroNecesidad?: string
+  fechaInicio?: string
+  fechaTerminacion?: string
+  linkSecop?: string
+  observacion?: string
+  frentes?: number[]
+}
+
+// Body de PATCH /procesos/:id (ActualizarProcesoDto): igual que crear pero
+// sin estadoId ni frentes (van por PATCH /procesos/:id/estado y los endpoints
+// de vínculo frente↔proceso), todo opcional.
+export type ActualizarProcesoPayload = Partial<
+  Omit<CrearProcesoPayload, 'estadoId' | 'frentes'>
+>
+
+// Body de PATCH /procesos/:id/estado.
+export interface CambiarEstadoPayload {
+  estadoId: number
+  nota: string
+  fecha?: string
 }

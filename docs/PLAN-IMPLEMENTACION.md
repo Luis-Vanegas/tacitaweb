@@ -210,14 +210,14 @@ Antes de codificar, propón el árbol de componentes y qué va en Redux vs estad
 
 ---
 
-### Fase 5 — Ficha del proceso, edición y personal ⬜
+### Fase 5 — Ficha del proceso, edición y personal ⬜ (todo hecho y verificado en navegador contra un mock; Playwright real sigue bloqueado)
 
-- [ ] **ProcesoFichaPage**: datos, línea de tiempo del estado (stepper vertical), `BitacoraTimeline`, interventoría ↔ contrato vigilado, frentes donde aparece.
-- [ ] `ProcesoForm` (RHF + Yup, mismas reglas que la BD: fechas coherentes, número solo dígitos, link https).
-- [ ] Cambio de estado con nota obligatoria (un solo request → `PATCH /procesos/:id/estado`).
-- [ ] `NotaForm` para la bitácora.
-- [ ] **PersonalTab**: tarjetas por tipo (actual, pendiente, meta, fecha final, operadores), ECharts barras apiladas actual vs pendiente y comparativo 2025 vs 2026.
-- [ ] `FichaTecnicaPdf` (@react-pdf/renderer) del proceso y del frente.
+- [x] **ProcesoFichaPage** (`front/src/features/procesos/ProcesoFichaPage.tsx`): datos del proceso + `PlazoBar`, `ProcesoEstadoTimeline` (stepper vertical de `estado_proceso` ordenado por `orden`, resalta el estado actual, clic abre `CambiarEstadoDialog` solo para ADMIN/EDITOR), `BitacoraTimeline` (bitácora cronológica con autor real), sección "Interventoría" (contrato vigilado si `tipo==='INTERVENTORIA'`, o interventorías que vigilan al proceso), chips de `frentes` que linkean a `/frentes/:slug`, botones Editar/Agregar nota y descarga de PDF.
+- [x] `ProcesoForm` (`ProcesoForm.tsx`, RHF + Yup) para crear/editar: validaciones 1:1 contra `001_core_schema.sql` (`numeroContrato`/`numeroNecesidad` solo dígitos, `linkSecop` con `^https://`, `fechaTerminacion >= fechaInicio`). Sin campo de estado ni de frentes (van por otros flujos, a propósito).
+- [x] Cambio de estado con nota obligatoria: `CambiarEstadoDialog.tsx`, un solo request a `PATCH /procesos/:id/estado` con `{estadoId, nota}`; el botón "Guardar" queda deshabilitado hasta que la nota tiene contenido.
+- [x] `NotaForm.tsx` para la bitácora (`POST /procesos/:id/seguimiento`, fecha + nota obligatoria).
+- [x] **PersonalTab** (`front/src/features/frentes/PersonalTab.tsx`): tarjetas por tipo (actual, pendiente, meta, fecha final), operadores agrupados por corte/vigencia, gráfico ECharts de barras apiladas actual vs pendiente, y tabla comparativa por vigencia (2025 vs 2026) armada agrupando `historico` (`GET /frentes/:slug/personal` trae **todas** las vigencias, no solo la más reciente — el comparativo sí es posible con los datos actuales, sin endpoint nuevo). El comparativo solo se muestra si hay más de una vigencia en los datos reales.
+- [x] `front/src/shared/components/pdf/` (`@react-pdf/renderer`, agregado a `front/package.json`): `ProcesoPdfDocument.tsx` y `FrentePdfDocument.tsx` + `PdfDownloadButton.tsx` reutilizable (usa `usePDF` de `@react-pdf/renderer`, no `PDFDownloadLink`, para poder envolver un `Button` de MUI sin anidar `<button>` dentro de `<a>`). Botón de descarga en `ProcesoFichaPage` y en el header de `FrenteDetallePage`.
 - [x] Export Excel del frente (`GET /frentes/:slug/export`). Implementado en el
       módulo `frentes` existente (`frentes.controller.ts`/`frentes.service.ts`),
       sin módulo nuevo. Rol: todos los autenticados. `exceljs` (no estaba
@@ -233,8 +233,20 @@ Antes de codificar, propón el árbol de componentes y qué va en Redux vs estad
       404 si el slug no existe (mismo `resolverFrente()` que el resto del
       controller). Test unitario del service con mocks de repositorio: arma
       el buffer, lo vuelve a leer con `ExcelJS.Workbook#load` y verifica
-      encabezados y datos de ambas hojas.
-- [ ] Admin: usuarios + frentes asignados; vínculos manuales frente↔proceso; **resolver los pendientes de negocio de §0** desde aquí (enlazar interventorías, corregir contratista).
+      encabezados y datos de ambas hojas. **Fase 5 (frontend)**: botón "Exportar"
+      de `FrenteDetallePage` habilitado, descarga el blob con el nombre de
+      archivo real leído del header `Content-Disposition` (nunca inventado).
+- [x] Admin (`front/src/features/admin/`): `UsuariosPage.tsx` (CRUD completo — crear/editar con `UsuarioFormDialog`, password obligatorio solo al crear, asignación de `frentes` solo visible para rol EDITOR; "Desactivar" mapea a `PATCH {activo:false}` y no al `DELETE` físico, porque `usuarios.service.ts` hace un `delete` real sin soft-delete y la UI dice "desactivar", no "eliminar" — reversible con el mismo botón) y `VinculosPage.tsx` (vincula/desvincula proceso↔frente vía `PUT/DELETE /frentes/:slug/procesos/:id`; sin buscador de procesos porque no hay endpoint de búsqueda, se pega el id manualmente — documentado en la propia UI). Rutas anidadas `/admin/usuarios` y `/admin/vinculos` (`AdminLayout.tsx`).
+  - **Pendientes de negocio de §0**: de los 5 ítems, 3 son datos que ya se pueden corregir editando el proceso correspondiente con el `ProcesoForm` de esta fase (enlazar las 10 interventorías vía `procesoSupervisadoId`, la necesidad 56173 duplicada, el contrato sin fecha de inicio) — no requieren pantalla nueva. Los otros 2 (renombrar el contratista «Cicloinfraestructura 20005479», corregir la dependencia nula de EMVARIAS) **siguen bloqueados**: se verificó con grep sobre `back/src/modules/**/*.controller.ts` que no existe ningún `POST/PUT/PATCH` sobre `contratista` ni `dependencia` — falta un endpoint de escritura sobre esos catálogos, decisión de backend pendiente (no se inventó ni se forzó por otro lado).
+
+**Gaps de datos encontrados (no inventados)**:
+- No existe catálogo de actividades en el front (`CatalogosRespuesta` solo trae `estados/dependencias/proyectos/contratistas`) ni endpoint de búsqueda de procesos — `actividadId` en `ProcesoForm` y "Id del proceso" en `VinculosPage` quedaron como campo de texto simple, documentado en el propio código/UI.
+- El tipo `Seguimiento` del front usaba `usuarioId`; la entidad real del backend expone `autorId` + relación `autor` (`seguimiento.entity.ts`). Corregido en `front/src/shared/types/seguimiento.ts` y `BitacoraTimeline.tsx` antes del commit final — se verificó en el navegador que el nombre del autor aparece bien en la bitácora.
+- La tab "Bitácora" de `FrenteDetallePage` (agregada de todos los procesos del frente) sigue en placeholder: no hay endpoint que devuelva la bitácora agregada de un frente completo (la bitácora por proceso, que sí pide el checklist de Fase 5, está resuelta en `ProcesoFichaPage`).
+
+**Verificación manual en navegador (esta sesión):** mismo enfoque que Fase 4 — el backend real sigue sin poder levantar. Se amplió el mock del scratchpad (solo módulo `http` nativo, fuera del repo) para cubrir `GET/PATCH /procesos/:id`, `PATCH /procesos/:id/estado`, `POST /procesos/:id/seguimiento`, `GET /frentes/:slug/personal` (con dos vigencias, 2025 y 2026, para poder ver el comparativo real), `GET /frentes/:slug/export` y el CRUD de `/usuarios`. Como escribir `front/.env.local` está bloqueado por el sistema de permisos de esta sesión, se usó el `.env` ya existente del proyecto (`VITE_API_URL=http://localhost:3000/api/v1`) sirviendo el mock en el puerto 3000 en lugar de tocar archivos `.env`; no se dejó ningún cambio de configuración persistente (se verificó `git diff` limpio en `vite.config.ts`/`.env`). Se navegó: login automático (bootstrap), ficha de un proceso (datos, stepper vertical, interventoría, chips de frentes), cambio de estado con nota (bloqueaba el submit sin nota; al guardar la nota nueva apareció al tope de la bitácora), agregar nota suelta (con validación Yup visible), descarga de PDF (sin errores en consola), tab Personal (tarjetas, gráfico ECharts con tooltip funcionando, tabla comparativa 2025 vs 2026 con datos reales), botón Exportar (request 200 real), y Admin (tabla de usuarios, diálogo "Nuevo usuario", pantalla de Vínculos). Se cerraron los mocks y se revirtió `vite.config.ts` al terminar.
+
+**Verificación automática:** `npx tsc --noEmit -p tsconfig.app.json` limpio, `npm run lint` limpio, `npx vitest run` → **29/29 tests en verde** (7 archivos) sobre el árbol completo (incluye los tests nuevos de `ProcesoFichaPage`, `CambiarEstadoDialog`, `PersonalTab`, `UsuariosPage`).
 
 **Prompt:**
 ```

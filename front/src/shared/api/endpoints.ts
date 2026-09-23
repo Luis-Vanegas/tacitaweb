@@ -13,9 +13,25 @@ export const endpoints = {
     detalle: (slug: string) => `/frentes/${slug}`,
     procesos: (slug: string) => `/frentes/${slug}/procesos`,
     personal: (slug: string) => `/frentes/${slug}/personal`,
-    // GET /frentes/:slug/export no existe todavía (Fase 5/6): no se referencia acá a propósito.
+    export: (slug: string) => `/frentes/${slug}/export`,
+    vincularProceso: (slug: string, id: string) => `/frentes/${slug}/procesos/${id}`,
+    desvincularProceso: (slug: string, id: string) => `/frentes/${slug}/procesos/${id}`,
   },
   procesos: {
+    crear: '/procesos',
     detalle: (id: string) => `/procesos/${id}`,
+    actualizar: (id: string) => `/procesos/${id}`,
+    cambiarEstado: (id: string) => `/procesos/${id}/estado`,
+  },
+  seguimiento: {
+    listar: (procesoId: string) => `/procesos/${procesoId}/seguimiento`,
+    crear: (procesoId: string) => `/procesos/${procesoId}/seguimiento`,
+  },
+  usuarios: {
+    listar: '/usuarios',
+    obtener: (id: string) => `/usuarios/${id}`,
+    crear: '/usuarios',
+    actualizar: (id: string) => `/usuarios/${id}`,
+    eliminar: (id: string) => `/usuarios/${id}`,
   },
 } as const

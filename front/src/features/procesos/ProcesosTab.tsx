@@ -6,6 +6,7 @@ import MenuItem from '@mui/material/MenuItem'
 import InputAdornment from '@mui/material/InputAdornment'
 import SearchIcon from '@mui/icons-material/Search'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
+import AddIcon from '@mui/icons-material/Add'
 import Table from '@mui/material/Table'
 import TableHead from '@mui/material/TableHead'
 import TableBody from '@mui/material/TableBody'
@@ -20,6 +21,12 @@ import Link from '@mui/material/Link'
 import Skeleton from '@mui/material/Skeleton'
 import IconButton from '@mui/material/IconButton'
 import Tooltip from '@mui/material/Tooltip'
+import Button from '@mui/material/Button'
+import Dialog from '@mui/material/Dialog'
+import DialogTitle from '@mui/material/DialogTitle'
+import DialogContent from '@mui/material/DialogContent'
+import DialogActions from '@mui/material/DialogActions'
+import CircularProgress from '@mui/material/CircularProgress'
 import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/redux'
 import { useDebounce } from '@/shared/hooks/useDebounce'
@@ -28,7 +35,9 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { ErrorState } from '@/shared/components/ErrorState'
 import { EstadoChip } from '@/shared/components/EstadoChip'
 import { PlazoBar } from '@/shared/components/PlazoBar'
-import type { FaseProceso, ProcesoDetalle, TipoProceso } from '@/shared/types'
+import type { ActualizarProcesoPayload, FaseProceso, ProcesoDetalle, TipoProceso } from '@/shared/types'
+import { ProcesoForm } from './ProcesoForm'
+import { crearProcesoRequest, limpiarCrearProceso } from './procesoMutacionesSlice'
 import { procesosRequest } from './procesosSlice'
 
 interface ProcesosTabProps {
@@ -57,11 +66,13 @@ export function ProcesosTab({ slug, estadoIdExterno }: ProcesosTabProps) {
   const isMobile = useIsMobile()
   const { estado, error, data } = useAppSelector((s) => s.procesos)
   const catalogos = useAppSelector((s) => s.catalogos)
+  const crearProceso = useAppSelector((s) => s.procesoMutaciones.crear)
 
   const [q, setQ] = useState('')
   const [fase, setFase] = useState<FaseProceso | ''>('')
   const [dependencia, setDependencia] = useState<number | ''>('')
   const [tipo, setTipo] = useState<TipoProceso | ''>('')
+  const [dialogoCrearAbierto, setDialogoCrearAbierto] = useState(false)
   const debouncedQ = useDebounce(q, 350)
 
   const estadoCodigoExterno = useMemo(() => {
@@ -69,22 +80,55 @@ export function ProcesosTab({ slug, estadoIdExterno }: ProcesosTabProps) {
     return catalogos.estados.find((e) => e.id === estadoIdExterno)?.codigo
   }, [estadoIdExterno, catalogos.estados])
 
+  // Estado inicial de un proceso nuevo: el de menor `orden` del catálogo (el
+  // primer paso del flujo, típicamente "Precontractual"). ProcesoForm no
+  // incluye selector de estado a propósito (ver su comentario), así que hay
+  // que resolverlo acá para poder armar el CrearProcesoPayload completo.
+  const estadoIdInicial = useMemo(() => {
+    if (catalogos.estados.length === 0) return null
+    return catalogos.estados.reduce((menor, e) => (e.orden < menor.orden ? e : menor)).id
+  }, [catalogos.estados])
+
+  function filtroActual() {
+    return {
+      page: 1,
+      pageSize: 50,
+      q: debouncedQ || undefined,
+      fase: fase || undefined,
+      dependencia: dependencia || undefined,
+      tipo: tipo || undefined,
+      estado: estadoCodigoExterno,
+    }
+  }
+
   useEffect(() => {
+    dispatch(procesosRequest({ slug, filtro: filtroActual() }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch, slug, debouncedQ, fase, dependencia, tipo, estadoCodigoExterno])
+
+  // Tras crear con éxito: cerrar el diálogo, refrescar la tabla (redispatch
+  // del mismo fetch que ya usa la tab) y limpiar la mutación para la próxima vez.
+  useEffect(() => {
+    if (crearProceso.estado === 'succeeded') {
+      setDialogoCrearAbierto(false)
+      dispatch(procesosRequest({ slug, filtro: filtroActual() }))
+      dispatch(limpiarCrearProceso())
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [crearProceso.estado, dispatch, slug])
+
+  function crearProcesoNuevo(datos: ActualizarProcesoPayload) {
+    if (estadoIdInicial === null) return
     dispatch(
-      procesosRequest({
-        slug,
-        filtro: {
-          page: 1,
-          pageSize: 50,
-          q: debouncedQ || undefined,
-          fase: fase || undefined,
-          dependencia: dependencia || undefined,
-          tipo: tipo || undefined,
-          estado: estadoCodigoExterno,
-        },
+      crearProcesoRequest({
+        ...datos,
+        // ProcesoForm valida actividadId como requerido (yup): siempre viene
+        // poblado en runtime aunque ActualizarProcesoPayload lo declare opcional.
+        actividadId: datos.actividadId as number,
+        estadoId: estadoIdInicial,
       }),
     )
-  }, [dispatch, slug, debouncedQ, fase, dependencia, tipo, estadoCodigoExterno])
+  }
 
   const grupos = useMemo(() => agruparPorActividad(data?.data ?? []), [data])
 
@@ -148,6 +192,18 @@ export function ProcesosTab({ slug, estadoIdExterno }: ProcesosTabProps) {
           <MenuItem value="PRINCIPAL">Principal</MenuItem>
           <MenuItem value="INTERVENTORIA">Interventoría</MenuItem>
         </TextField>
+        <Tooltip title={estadoIdInicial === null ? 'Cargando catálogo de estados…' : ''}>
+          <span style={{ marginLeft: 'auto' }}>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              disabled={estadoIdInicial === null}
+              onClick={() => setDialogoCrearAbierto(true)}
+            >
+              Nuevo proceso
+            </Button>
+          </span>
+        </Tooltip>
       </Stack>
 
       {estado === 'loading' && (
@@ -252,6 +308,26 @@ export function ProcesosTab({ slug, estadoIdExterno }: ProcesosTabProps) {
           ))}
         </Stack>
       )}
+
+      <Dialog open={dialogoCrearAbierto} onClose={() => setDialogoCrearAbierto(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Nuevo proceso</DialogTitle>
+        <DialogContent>
+          <ProcesoForm
+            formId="proceso-form-crear"
+            contratistas={catalogos.contratistas}
+            error={crearProceso.error}
+            onGuardar={crearProcesoNuevo}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialogoCrearAbierto(false)} disabled={crearProceso.estado === 'loading'}>
+            Cancelar
+          </Button>
+          <Button type="submit" form="proceso-form-crear" variant="contained" disabled={crearProceso.estado === 'loading'}>
+            {crearProceso.estado === 'loading' ? <CircularProgress size={20} color="inherit" /> : 'Guardar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }
