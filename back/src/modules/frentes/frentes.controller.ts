@@ -51,9 +51,12 @@ export class FrentesController {
   async exportar(@Param('slug') slug: string): Promise<StreamableFile> {
     const buffer = await this.frentesService.exportarExcel(slug);
     const fecha = new Date().toISOString().slice(0, 10);
+    // El slug ya matcheó una fila real (frente.slug respeta '^[a-z0-9-]+$' por
+    // CHECK de la BD), pero no confiamos en el param crudo para un header HTTP.
+    const slugSeguro = slug.replace(/[^a-z0-9-]/gi, '');
     return new StreamableFile(buffer, {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      disposition: `attachment; filename="${slug}-${fecha}.xlsx"`,
+      disposition: `attachment; filename="${slugSeguro}-${fecha}.xlsx"`,
     });
   }
 
