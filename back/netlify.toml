@@ -6,11 +6,12 @@
 
 [functions]
   directory = "netlify/functions"
-  node_bundler = "esbuild"
-  # TypeORM/Nest/pg usan requires dinámicos (drivers de BD, reflection) que
-  # esbuild no resuelve bien al bundlear — se dejan tal cual en node_modules
-  # en vez de intentar empaquetarlos.
-  external_node_modules = ["typeorm", "pg", "@nestjs/core", "@nestjs/common", "@nestjs/platform-express", "reflect-metadata"]
+  # SIN node_bundler = "esbuild" a propósito: Nest/TypeORM usan requires
+  # dinámicos y trucos de Node (createRequire con __filename, reflection) que
+  # se rompen cuando esbuild concatena todo en un solo archivo (error real:
+  # "@nestjs/mapped-types" fallaba en runtime con esbuild). El default
+  # "zisi" copia node_modules real en vez de reempaquetar, y no tiene ese
+  # problema — bundle más pesado, pero es el que efectivamente funciona.
 
 [[redirects]]
   force = true
