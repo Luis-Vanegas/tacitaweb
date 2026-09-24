@@ -137,6 +137,15 @@ export class FrentesService {
     if (filtro.tipo) {
       qb.andWhere('v.tipo = :tipo', { tipo: filtro.tipo });
     }
+    if (filtro.esAlerta) {
+      qb.andWhere('v.esAlerta = true');
+    }
+    if (filtro.proximosVencer) {
+      // Misma definición que "proximos_vencer" en v_resumen_frente.
+      qb.andWhere(
+        "v.fase = 'CONTRACTUAL' and v.diasRestantes between 0 and 30",
+      );
+    }
     if (filtro.q) {
       qb.andWhere(
         '(v.numeroContrato ILIKE :q OR v.numeroNecesidad ILIKE :q OR v.actividad ILIKE :q OR v.contratista ILIKE :q)',
