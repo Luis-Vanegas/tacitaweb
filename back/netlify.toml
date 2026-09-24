@@ -15,8 +15,16 @@
   # external tal cual -> rompe con ERR_REQUIRE_ESM. Dejando que esbuild lo
   # bundlee (inline) lo convierte a CJS al empaquetar, que es justo lo que
   # necesita.
+  # class-transformer: @nestjs/mapped-types intenta requerir
+  # "class-transformer/storage" dentro de un try/catch como fallback legacy
+  # (primero prueba "class-transformer/cjs/storage", que si existe y gana
+  # siempre en runtime). esbuild igual intenta resolver AMBOS paths en
+  # build-time y el segundo no existe en class-transformer 0.5.1 -> rompia
+  # el bundling ("Could not resolve"). external_node_modules solo documenta
+  # nombres de paquete completos (no subpaths), asi que va el paquete entero:
+  # Netlify copia los archivos reales en vez de intentar resolverlos.
   node_bundler = "esbuild"
-  external_node_modules = ["@nestjs/websockets", "@nestjs/microservices"]
+  external_node_modules = ["@nestjs/websockets", "@nestjs/microservices", "class-transformer"]
 
 [[redirects]]
   force = true
