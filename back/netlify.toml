@@ -1,0 +1,19 @@
+# Backend NestJS como función serverless (ver netlify/functions/api.ts).
+# Site de Netlify configurado con "Base directory" = back/.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  # TypeORM/Nest/pg usan requires dinámicos (drivers de BD, reflection) que
+  # esbuild no resuelve bien al bundlear — se dejan tal cual en node_modules
+  # en vez de intentar empaquetarlos.
+  external_node_modules = ["typeorm", "pg", "@nestjs/core", "@nestjs/common", "@nestjs/platform-express", "reflect-metadata"]
+
+[[redirects]]
+  force = true
+  from = "/api/*"
+  status = 200
+  to = "/.netlify/functions/api/:splat"

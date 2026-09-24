@@ -27,3 +27,6 @@ npm-debug.log*
 
 # Sonar (analisis local)
 .sonar
+
+# Netlify (CLI local, no es codigo de usuario)
+.netlify
