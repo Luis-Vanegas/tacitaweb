@@ -1,6 +1,6 @@
 // Mapea la vista de solo lectura core.v_personal_vigente (003_core_views.sql).
 // Ver nota sobre `expression` + synchronize:false en proceso-detalle.view-entity.ts.
-import { ViewColumn, ViewEntity } from 'typeorm';
+import { PrimaryColumn, ViewColumn, ViewEntity } from 'typeorm';
 
 @ViewEntity({
   name: 'v_personal_vigente',
@@ -25,7 +25,9 @@ import { ViewColumn, ViewEntity } from 'typeorm';
   `,
 })
 export class VPersonalVigente {
+  // PrimaryColumn: ver nota en proceso-detalle.view-entity.ts.
   @ViewColumn({ name: 'corte_id' })
+  @PrimaryColumn()
   corteId!: string;
 
   @ViewColumn({ name: 'tipo_personal_id' })

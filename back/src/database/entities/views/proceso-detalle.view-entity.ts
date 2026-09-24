@@ -3,7 +3,7 @@
 // tiene synchronize:false a nivel global, TypeORM nunca ejecuta este SQL para
 // crear/reemplazar la vista real — solo documenta su definición. Se mantiene
 // idéntico al archivo SQL para que no queden desincronizados.
-import { ViewColumn, ViewEntity } from 'typeorm';
+import { PrimaryColumn, ViewColumn, ViewEntity } from 'typeorm';
 import { TipoProceso } from '../proceso-contratacion.entity';
 import { FaseProceso } from '../estado-proceso.entity';
 
@@ -61,7 +61,11 @@ import { FaseProceso } from '../estado-proceso.entity';
   `,
 })
 export class VProcesoDetalle {
+  // PrimaryColumn (no solo ViewColumn): TypeORM lo necesita para armar el
+  // SELECT DISTINCT de paginación cuando la query tiene join + skip/take;
+  // sin esto genera "SELECT DISTINCT , ..." (columna vacía) y rompe en SQL.
   @ViewColumn()
+  @PrimaryColumn()
   id!: string;
 
   @ViewColumn()

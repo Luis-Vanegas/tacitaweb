@@ -1,6 +1,6 @@
 // Mapea la vista de solo lectura core.v_resumen_frente (003_core_views.sql).
 // Ver nota sobre `expression` + synchronize:false en proceso-detalle.view-entity.ts.
-import { ViewColumn, ViewEntity } from 'typeorm';
+import { PrimaryColumn, ViewColumn, ViewEntity } from 'typeorm';
 
 @ViewEntity({
   name: 'v_resumen_frente',
@@ -48,7 +48,9 @@ import { ViewColumn, ViewEntity } from 'typeorm';
   `,
 })
 export class VResumenFrente {
+  // PrimaryColumn: ver nota en proceso-detalle.view-entity.ts.
   @ViewColumn()
+  @PrimaryColumn()
   id!: number;
 
   @ViewColumn()
