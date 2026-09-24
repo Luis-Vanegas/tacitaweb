@@ -11,6 +11,7 @@ export interface ResumenFrenteApi {
   icono: string
   orden: number
   totalProcesos: string
+  totalActividades: string
   precontractual: string
   enEjecucion: string
   terminados: string
@@ -29,6 +30,7 @@ export interface ResumenFrente {
   icono: string
   orden: number
   totalProcesos: number
+  totalActividades: number
   precontractual: number
   enEjecucion: number
   terminados: number

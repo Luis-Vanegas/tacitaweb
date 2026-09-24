@@ -13,6 +13,7 @@ const initialState: CatalogosState = {
   dependencias: [],
   proyectos: [],
   contratistas: [],
+  categoriasActividad: [],
 }
 
 const catalogosSlice = createSlice({
@@ -31,6 +32,7 @@ const catalogosSlice = createSlice({
       state.dependencias = action.payload.dependencias
       state.proyectos = action.payload.proyectos
       state.contratistas = action.payload.contratistas
+      state.categoriasActividad = action.payload.categoriasActividad
     },
     catalogosFailure: (state, action: PayloadAction<string>) => {
       state.estado = 'failed'

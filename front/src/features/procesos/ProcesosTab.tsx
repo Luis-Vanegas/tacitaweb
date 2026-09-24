@@ -7,12 +7,8 @@ import InputAdornment from '@mui/material/InputAdornment'
 import SearchIcon from '@mui/icons-material/Search'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import AddIcon from '@mui/icons-material/Add'
-import Table from '@mui/material/Table'
-import TableHead from '@mui/material/TableHead'
-import TableBody from '@mui/material/TableBody'
-import TableRow from '@mui/material/TableRow'
-import TableCell from '@mui/material/TableCell'
-import TableContainer from '@mui/material/TableContainer'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import Paper from '@mui/material/Paper'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
@@ -30,29 +26,42 @@ import CircularProgress from '@mui/material/CircularProgress'
 import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/redux'
 import { useDebounce } from '@/shared/hooks/useDebounce'
-import { useIsMobile } from '@/shared/hooks/useBreakpoint'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { ErrorState } from '@/shared/components/ErrorState'
 import { EstadoChip } from '@/shared/components/EstadoChip'
 import { PlazoBar } from '@/shared/components/PlazoBar'
-import type { ActualizarProcesoPayload, FaseProceso, ProcesoDetalle, TipoProceso } from '@/shared/types'
+import type {
+  ActualizarProcesoPayload,
+  ConteoPorEstado,
+  FaseProceso,
+  ProcesoDetalle,
+  TipoProceso,
+} from '@/shared/types'
 import { ProcesoForm } from './ProcesoForm'
 import { crearProcesoRequest, limpiarCrearProceso } from './procesoMutacionesSlice'
 import { procesosRequest } from './procesosSlice'
 
 interface ProcesosTabProps {
   slug: string
-  estadoIdExterno: number | null
+  conteoPorEstado: ConteoPorEstado[]
 }
 
-function agruparPorActividad(items: ProcesoDetalle[]): [string, ProcesoDetalle[]][] {
-  const mapa = new Map<string, ProcesoDetalle[]>()
+type GrupoActividad = [string, ProcesoDetalle[]]
+type SeccionCategoria = [string, GrupoActividad[]]
+
+// Dos niveles: categoría temática (Vial, Espacio público...) -> actividad ->
+// sus procesos. La categoría viene de core.categoria_actividad (clasificación
+// de negocio real, no inferida por texto) — ver v_proceso_detalle.
+function agruparPorCategoriaYActividad(items: ProcesoDetalle[]): Map<string, Map<string, ProcesoDetalle[]>> {
+  const porCategoria = new Map<string, Map<string, ProcesoDetalle[]>>()
   for (const item of items) {
-    const grupo = mapa.get(item.actividad) ?? []
+    const actividades = porCategoria.get(item.categoriaActividad) ?? new Map<string, ProcesoDetalle[]>()
+    const grupo = actividades.get(item.actividad) ?? []
     grupo.push(item)
-    mapa.set(item.actividad, grupo)
+    actividades.set(item.actividad, grupo)
+    porCategoria.set(item.categoriaActividad, actividades)
   }
-  return [...mapa.entries()]
+  return porCategoria
 }
 
 function formatearFecha(fecha: string | null): string {
@@ -60,10 +69,9 @@ function formatearFecha(fecha: string | null): string {
   return fecha
 }
 
-export function ProcesosTab({ slug, estadoIdExterno }: ProcesosTabProps) {
+export function ProcesosTab({ slug, conteoPorEstado }: ProcesosTabProps) {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
-  const isMobile = useIsMobile()
   const { estado, error, data } = useAppSelector((s) => s.procesos)
   const catalogos = useAppSelector((s) => s.catalogos)
   const crearProceso = useAppSelector((s) => s.procesoMutaciones.crear)
@@ -72,13 +80,28 @@ export function ProcesosTab({ slug, estadoIdExterno }: ProcesosTabProps) {
   const [fase, setFase] = useState<FaseProceso | ''>('')
   const [dependencia, setDependencia] = useState<number | ''>('')
   const [tipo, setTipo] = useState<TipoProceso | ''>('')
+  // Reemplaza al viejo ProcesoStepper (fila de círculos grandes fuera de esta
+  // tab): mismo filtro por estado, como un select más en esta fila.
+  const [estadoIdFiltro, setEstadoIdFiltro] = useState<number | ''>('')
   const [dialogoCrearAbierto, setDialogoCrearAbierto] = useState(false)
+  // Cada actividad arranca colapsada: el usuario ve primero la lista de
+  // actividades del frente, no los contratos, y abre la que le interesa.
+  const [actividadesAbiertas, setActividadesAbiertas] = useState<Set<string>>(new Set())
   const debouncedQ = useDebounce(q, 350)
 
-  const estadoCodigoExterno = useMemo(() => {
-    if (estadoIdExterno === null) return undefined
-    return catalogos.estados.find((e) => e.id === estadoIdExterno)?.codigo
-  }, [estadoIdExterno, catalogos.estados])
+  function toggleActividad(actividad: string) {
+    setActividadesAbiertas((prev) => {
+      const next = new Set(prev)
+      if (next.has(actividad)) next.delete(actividad)
+      else next.add(actividad)
+      return next
+    })
+  }
+
+  const estadoCodigoFiltro = useMemo(() => {
+    if (estadoIdFiltro === '') return undefined
+    return catalogos.estados.find((e) => e.id === estadoIdFiltro)?.codigo
+  }, [estadoIdFiltro, catalogos.estados])
 
   // Estado inicial de un proceso nuevo: el de menor `orden` del catálogo (el
   // primer paso del flujo, típicamente "Precontractual"). ProcesoForm no
@@ -97,14 +120,14 @@ export function ProcesosTab({ slug, estadoIdExterno }: ProcesosTabProps) {
       fase: fase || undefined,
       dependencia: dependencia || undefined,
       tipo: tipo || undefined,
-      estado: estadoCodigoExterno,
+      estado: estadoCodigoFiltro,
     }
   }
 
   useEffect(() => {
     dispatch(procesosRequest({ slug, filtro: filtroActual() }))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, slug, debouncedQ, fase, dependencia, tipo, estadoCodigoExterno])
+  }, [dispatch, slug, debouncedQ, fase, dependencia, tipo, estadoCodigoFiltro])
 
   // Tras crear con éxito: cerrar el diálogo, refrescar la tabla (redispatch
   // del mismo fetch que ya usa la tab) y limpiar la mutación para la próxima vez.
@@ -130,7 +153,15 @@ export function ProcesosTab({ slug, estadoIdExterno }: ProcesosTabProps) {
     )
   }
 
-  const grupos = useMemo(() => agruparPorActividad(data?.data ?? []), [data])
+  // Orden de las secciones = orden real del catálogo (Vial, Espacio público...),
+  // no alfabético ni "como vinieron los datos".
+  const secciones = useMemo<SeccionCategoria[]>(() => {
+    const porCategoria = agruparPorCategoriaYActividad(data?.data ?? [])
+    const ordenCategoria = new Map(catalogos.categoriasActividad.map((c) => [c.nombre, c.orden]))
+    return [...porCategoria.entries()]
+      .map<SeccionCategoria>(([categoria, actividades]) => [categoria, [...actividades.entries()]])
+      .sort(([a], [b]) => (ordenCategoria.get(a) ?? 99) - (ordenCategoria.get(b) ?? 99))
+  }, [data, catalogos.categoriasActividad])
 
   return (
     <Box>
@@ -192,6 +223,21 @@ export function ProcesosTab({ slug, estadoIdExterno }: ProcesosTabProps) {
           <MenuItem value="PRINCIPAL">Principal</MenuItem>
           <MenuItem value="INTERVENTORIA">Interventoría</MenuItem>
         </TextField>
+        <TextField
+          size="small"
+          select
+          label="Estado"
+          value={estadoIdFiltro}
+          onChange={(e) => setEstadoIdFiltro(e.target.value ? Number(e.target.value) : '')}
+          sx={{ minWidth: 190 }}
+        >
+          <MenuItem value="">Todos</MenuItem>
+          {conteoPorEstado.map((item) => (
+            <MenuItem key={item.estadoId} value={item.estadoId}>
+              {item.estado} ({item.total})
+            </MenuItem>
+          ))}
+        </TextField>
         <Tooltip title={estadoIdInicial === null ? 'Cargando catálogo de estados…' : ''}>
           <span style={{ marginLeft: 'auto' }}>
             <Button
@@ -207,11 +253,11 @@ export function ProcesosTab({ slug, estadoIdExterno }: ProcesosTabProps) {
       </Stack>
 
       {estado === 'loading' && (
-        <Stack spacing={1.5}>
-          {Array.from({ length: 5 }).map((_, i) => (
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', xl: 'repeat(3, 1fr)' }, gap: 1.5 }}>
+          {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} variant="rounded" height={56} />
           ))}
-        </Stack>
+        </Box>
       )}
 
       {estado === 'failed' && (
@@ -221,89 +267,53 @@ export function ProcesosTab({ slug, estadoIdExterno }: ProcesosTabProps) {
             dispatch(
               procesosRequest({
                 slug,
-                filtro: { page: 1, pageSize: 50, estado: estadoCodigoExterno },
+                filtro: { page: 1, pageSize: 50, estado: estadoCodigoFiltro },
               }),
             )
           }
         />
       )}
 
-      {estado === 'succeeded' && grupos.length === 0 && (
+      {estado === 'succeeded' && secciones.length === 0 && (
         <EmptyState titulo="Sin procesos" mensaje="No hay procesos con estos filtros." />
       )}
 
-      {estado === 'succeeded' && grupos.length > 0 && !isMobile && (
-        <TableContainer component={Paper} variant="outlined">
-          <Table size="small" aria-label="Procesos de contratación">
-            <TableHead>
-              <TableRow>
-                <TableCell>Contratista</TableCell>
-                <TableCell>Contrato / Necesidad</TableCell>
-                <TableCell>Estado</TableCell>
-                <TableCell>Inicio – Fin</TableCell>
-                <TableCell>Plazo</TableCell>
-                <TableCell align="center">SECOP</TableCell>
-                <TableCell>Última nota</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {grupos.map(([actividad, procesos]) => (
-                <FragmentoGrupo key={actividad} actividad={actividad} procesos={procesos} onAbrir={(id) => navigate(`/procesos/${id}`)} />
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
-
-      {estado === 'succeeded' && grupos.length > 0 && isMobile && (
-        <Stack spacing={2.5}>
-          {grupos.map(([actividad, procesos]) => (
-            <Box key={actividad}>
-              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>
-                {actividad}
+      {/* Una sección por categoría temática (Vial, Espacio público...), y
+          dentro de cada una el grid de actividades: en pantallas anchas se
+          ven 2-3 actividades por fila, mucho menos scroll para recorrerlas
+          todas. La tarjeta que se expande ocupa todo el ancho (gridColumn
+          1/-1) para que sus contratos tengan lugar de sobra, igual en
+          cualquier tamaño de pantalla — por eso no hace falta una versión
+          aparte "mobile". */}
+      {estado === 'succeeded' && secciones.length > 0 && (
+        <Stack spacing={3}>
+          {secciones.map(([categoria, grupos]) => (
+            <Box key={categoria}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5 }}>
+                {categoria}
+                <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1, fontWeight: 400 }}>
+                  ({grupos.length} {grupos.length === 1 ? 'actividad' : 'actividades'})
+                </Typography>
               </Typography>
-              <Stack spacing={1.5}>
-                {procesos.map((p) => (
-                  <Card
-                    key={p.id}
-                    variant="outlined"
-                    onClick={() => navigate(`/procesos/${p.id}`)}
-                    sx={{ cursor: 'pointer' }}
-                  >
-                    <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {p.contratista ?? 'Sin contratista'}
-                        </Typography>
-                        <EstadoChip nombre={p.estado} color={p.estadoColor} esAlerta={p.esAlerta} />
-                      </Stack>
-                      <Typography variant="caption" color="text.secondary">
-                        {p.numeroContrato ? `Contrato ${p.numeroContrato}` : `Necesidad ${p.numeroNecesidad ?? '—'}`}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {formatearFecha(p.fechaInicio)} – {formatearFecha(p.fechaTerminacion)}
-                      </Typography>
-                      <PlazoBar pctPlazo={p.pctPlazo} diasRestantes={p.diasRestantes} />
-                      {p.ultimaNota && (
-                        <Typography variant="caption" color="text.secondary" noWrap>
-                          {p.ultimaNota}
-                        </Typography>
-                      )}
-                      {p.linkSecop && (
-                        <Link
-                          href={p.linkSecop}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          sx={{ fontSize: 12 }}
-                        >
-                          Ver en SECOP
-                        </Link>
-                      )}
-                    </CardContent>
-                  </Card>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', xl: 'repeat(3, 1fr)' },
+                  gap: 1.5,
+                  alignItems: 'start',
+                }}
+              >
+                {grupos.map(([actividad, procesos]) => (
+                  <TarjetaActividad
+                    key={actividad}
+                    actividad={actividad}
+                    procesos={procesos}
+                    abierto={actividadesAbiertas.has(actividad)}
+                    onToggle={() => toggleActividad(actividad)}
+                    onAbrir={(id) => navigate(`/procesos/${id}`)}
+                  />
                 ))}
-              </Stack>
+              </Box>
             </Box>
           ))}
         </Stack>
@@ -332,64 +342,136 @@ export function ProcesosTab({ slug, estadoIdExterno }: ProcesosTabProps) {
   )
 }
 
-function FragmentoGrupo({
+function TarjetaActividad({
   actividad,
   procesos,
+  abierto,
+  onToggle,
   onAbrir,
 }: {
   actividad: string
   procesos: ProcesoDetalle[]
+  abierto: boolean
+  onToggle: () => void
   onAbrir: (id: string) => void
 }) {
   return (
-    <>
-      <TableRow>
-        <TableCell colSpan={7} sx={{ backgroundColor: 'rgba(0,35,61,0.04)', fontWeight: 700 }}>
-          {actividad}
-        </TableCell>
-      </TableRow>
-      {procesos.map((p) => (
-        <TableRow
-          key={p.id}
-          hover
-          onClick={() => onAbrir(p.id)}
-          sx={{ cursor: 'pointer' }}
-        >
-          <TableCell>{p.contratista ?? '—'}</TableCell>
-          <TableCell>{p.numeroContrato ?? p.numeroNecesidad ?? '—'}</TableCell>
-          <TableCell>
-            <EstadoChip nombre={p.estado} color={p.estadoColor} esAlerta={p.esAlerta} />
-          </TableCell>
-          <TableCell>
-            {formatearFecha(p.fechaInicio)} – {formatearFecha(p.fechaTerminacion)}
-          </TableCell>
-          <TableCell>
-            <PlazoBar pctPlazo={p.pctPlazo} diasRestantes={p.diasRestantes} />
-          </TableCell>
-          <TableCell align="center">
-            {p.linkSecop && (
-              <Tooltip title="Ver en SECOP">
-                <IconButton
-                  size="small"
-                  component="a"
-                  href={p.linkSecop}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  aria-label="Abrir proceso en SECOP"
-                >
-                  <OpenInNewIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-          </TableCell>
-          <TableCell sx={{ maxWidth: 220 }}>
-            <Typography variant="caption" noWrap component="div">
-              {p.ultimaNota ?? '—'}
+    <Paper
+      variant="outlined"
+      sx={{
+        // La tarjeta abierta ocupa toda la fila del grid: sus contratos
+        // necesitan más ancho del que da una sola columna.
+        gridColumn: abierto ? '1 / -1' : 'auto',
+        overflow: 'hidden',
+      }}
+    >
+      <Box
+        onClick={onToggle}
+        sx={{
+          cursor: 'pointer',
+          backgroundColor: 'rgba(0,171,238,0.08)',
+          borderLeft: '3px solid',
+          borderLeftColor: 'primary.main',
+          px: 1.25,
+          py: 0.75,
+        }}
+      >
+        <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1}>
+          <Stack direction="row" alignItems="center" spacing={0.75}>
+            {abierto ? <ExpandMoreIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
+            <Typography
+              variant="caption"
+              sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: 'primary.main' }}
+            >
+              Actividad
             </Typography>
-          </TableCell>
-        </TableRow>
+          </Stack>
+          <IconosSecop procesos={procesos} />
+        </Stack>
+        <Typography
+          title={actividad}
+          sx={{
+            fontWeight: 700,
+            mt: 0.25,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}
+        >
+          {actividad}{' '}
+          <Typography component="span" variant="caption" color="text.secondary" sx={{ fontWeight: 400 }}>
+            ({procesos.length} {procesos.length === 1 ? 'proceso' : 'procesos'})
+          </Typography>
+        </Typography>
+      </Box>
+
+      {abierto && (
+        <Stack spacing={1.5} sx={{ p: 1.5 }}>
+          {procesos.map((p) => (
+            <Card key={p.id} variant="outlined" onClick={() => onAbrir(p.id)} sx={{ cursor: 'pointer' }}>
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {p.contratista ?? 'Sin contratista'}
+                  </Typography>
+                  <EstadoChip nombre={p.estado} color={p.estadoColor} esAlerta={p.esAlerta} />
+                </Stack>
+                <Typography variant="caption" color="text.secondary">
+                  {p.numeroContrato ? `Contrato ${p.numeroContrato}` : `Necesidad ${p.numeroNecesidad ?? '—'}`}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {formatearFecha(p.fechaInicio)} – {formatearFecha(p.fechaTerminacion)}
+                </Typography>
+                <PlazoBar pctPlazo={p.pctPlazo} diasRestantes={p.diasRestantes} />
+                {p.ultimaNota && (
+                  <Typography variant="caption" color="text.secondary" noWrap>
+                    {p.ultimaNota}
+                  </Typography>
+                )}
+                {p.linkSecop && (
+                  <Link
+                    href={p.linkSecop}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    sx={{ fontSize: 12 }}
+                  >
+                    Ver en SECOP
+                  </Link>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </Stack>
+      )}
+    </Paper>
+  )
+}
+
+// Un ícono de SECOP por cada contrato de la actividad, visible sin expandir
+// (pedido explícito: ver el link de cada contrato de una, no solo al abrir).
+function IconosSecop({ procesos }: { procesos: ProcesoDetalle[] }) {
+  const conLink = procesos.filter((p) => p.linkSecop)
+  if (conLink.length === 0) return null
+  return (
+    <Box sx={{ display: 'flex', gap: 0.25, flexShrink: 0 }}>
+      {conLink.map((p) => (
+        <Tooltip key={p.id} title={`SECOP: ${p.numeroContrato ?? p.numeroNecesidad ?? p.contratista ?? p.id}`}>
+          <IconButton
+            size="small"
+            component="a"
+            href={p.linkSecop!}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            aria-label={`Abrir en SECOP: ${p.numeroContrato ?? p.numeroNecesidad ?? p.id}`}
+            sx={{ p: 0.5 }}
+          >
+            <OpenInNewIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+        </Tooltip>
       ))}
-    </>
+    </Box>
   )
 }

@@ -1,4 +1,5 @@
-// Mapea la vista de solo lectura core.v_proceso_detalle (003_core_views.sql).
+// Mapea la vista de solo lectura core.v_proceso_detalle (003_core_views.sql,
+// con categoria_actividad agregada en 005_categoria_actividad.sql).
 // `expression` es obligatorio para @ViewEntity pero, como TypeOrmModuleOptions
 // tiene synchronize:false a nivel global, TypeORM nunca ejecuta este SQL para
 // crear/reemplazar la vista real — solo documenta su definición. Se mantiene
@@ -44,13 +45,16 @@ import { FaseProceso } from '../estado-proceso.entity';
       end                                                                    as pct_plazo,
       ult.fecha       as ultima_nota_fecha,
       ult.nota        as ultima_nota,
-      p.updated_at
+      p.updated_at,
+      ca.id           as categoria_actividad_id,
+      ca.nombre       as categoria_actividad
     from core.proceso_contratacion p
     join core.actividad      a  on a.id  = p.actividad_id
     join core.dependencia    d  on d.id  = a.dependencia_id
     join core.proyecto       pr on pr.id = a.proyecto_id
     join core.estado_proceso e  on e.id  = p.estado_id
     left join core.contratista c on c.id = p.contratista_id
+    join core.categoria_actividad ca on ca.id = a.categoria_id
     left join lateral (
       select s.fecha, s.nota
       from core.seguimiento s
@@ -148,4 +152,10 @@ export class VProcesoDetalle {
 
   @ViewColumn({ name: 'updated_at' })
   updatedAt!: Date;
+
+  @ViewColumn({ name: 'categoria_actividad_id' })
+  categoriaActividadId!: number;
+
+  @ViewColumn({ name: 'categoria_actividad' })
+  categoriaActividad!: string;
 }

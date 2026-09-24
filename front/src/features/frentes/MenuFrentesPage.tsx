@@ -34,109 +34,102 @@ export function MenuFrentesPage() {
         py: { xs: 3, sm: 5 },
       }}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 4,
-        }}
-      >
+      {usuario && (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1.5, mb: 2 }}>
+          <Typography variant="body2" sx={{ color: tokens.color.onNavyMuted }}>
+            {usuario.nombre}
+          </Typography>
+          <Tooltip title="Cerrar sesión">
+            <IconButton
+              aria-label="Cerrar sesión"
+              onClick={() => dispatch(logoutRequest())}
+              sx={{ color: tokens.color.onNavy }}
+            >
+              <LogoutIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      )}
+
+      <Box sx={{ textAlign: 'center', mb: { xs: 4, sm: 6 } }}>
         <Box
           sx={{
             display: 'inline-block',
-            px: 2,
-            py: 0.75,
+            px: { xs: 3, sm: 5 },
+            py: { xs: 1.25, sm: 1.75 },
             borderRadius: 999,
-            backgroundColor: tokens.color.primary,
-            color: '#fff',
-            fontWeight: 700,
+            background: `linear-gradient(135deg, ${tokens.color.headerGradientFrom}, ${tokens.color.headerGradientTo})`,
+            boxShadow: `0 8px 30px rgba(0, 171, 238, 0.35)`,
           }}
         >
-          Tacita de Plata
+          <Typography
+            component="h1"
+            sx={{
+              fontWeight: 800,
+              fontSize: { xs: '1.75rem', sm: '2.25rem', md: '2.75rem' },
+              color: '#fff',
+              lineHeight: 1.1,
+            }}
+          >
+            Tacita de Plata
+          </Typography>
         </Box>
+        <Typography variant="body1" sx={{ mt: 2, color: tokens.color.onNavyMuted }}>
+          Seguimiento a la contratación y el personal del proyecto.
+        </Typography>
+      </Box>
 
-        {usuario && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Typography variant="body2" sx={{ color: tokens.color.onNavyMuted }}>
-              {usuario.nombre}
-            </Typography>
-            <Tooltip title="Cerrar sesión">
-              <IconButton
-                aria-label="Cerrar sesión"
-                onClick={() => dispatch(logoutRequest())}
-                sx={{ color: tokens.color.onNavy }}
-              >
-                <LogoutIcon />
-              </IconButton>
-            </Tooltip>
+      <Box sx={{ maxWidth: 1280, mx: 'auto' }}>
+        {estado === 'loading' && (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 2.5 }}>
+            {Array.from({ length: 7 }).map((_, i) => (
+              <Skeleton
+                key={i}
+                variant="rounded"
+                height={168}
+                sx={{ borderRadius: 4, ...cardBasis }}
+              />
+            ))}
+          </Box>
+        )}
+
+        {estado === 'failed' && (
+          <Box sx={{ backgroundColor: tokens.color.cardBackground, borderRadius: 4 }}>
+            <ErrorState
+              mensaje={error ?? undefined}
+              onReintentar={() => dispatch(frentesListarRequest())}
+            />
+          </Box>
+        )}
+
+        {estado === 'succeeded' && items.length === 0 && (
+          <Box sx={{ backgroundColor: tokens.color.cardBackground, borderRadius: 4 }}>
+            <EmptyState titulo="Sin frentes" mensaje="Todavía no hay frentes configurados." />
+          </Box>
+        )}
+
+        {estado === 'succeeded' && items.length > 0 && (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 2.5 }}>
+            {items.map((frente) => (
+              <Box key={frente.id} sx={cardBasis}>
+                <FrenteCard frente={frente} onAbrir={(slug) => navigate(`/frentes/${slug}`)} />
+              </Box>
+            ))}
           </Box>
         )}
       </Box>
-
-      <Typography variant="h4" component="h1" sx={{ mb: 0.5, fontWeight: 700 }}>
-        Frentes
-      </Typography>
-      <Typography variant="body1" sx={{ mb: 4, color: tokens.color.onNavyMuted }}>
-        Seguimiento a la contratación y el personal del proyecto.
-      </Typography>
-
-      {estado === 'loading' && (
-        <Box
-          sx={{
-            display: 'grid',
-            gap: 2.5,
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(2, 1fr)',
-              md: 'repeat(3, 1fr)',
-              lg: 'repeat(4, 1fr)',
-            },
-          }}
-        >
-          {Array.from({ length: 7 }).map((_, i) => (
-            <Skeleton key={i} variant="rounded" height={168} sx={{ borderRadius: 4 }} />
-          ))}
-        </Box>
-      )}
-
-      {estado === 'failed' && (
-        <Box sx={{ backgroundColor: tokens.color.cardBackground, borderRadius: 4 }}>
-          <ErrorState
-            mensaje={error ?? undefined}
-            onReintentar={() => dispatch(frentesListarRequest())}
-          />
-        </Box>
-      )}
-
-      {estado === 'succeeded' && items.length === 0 && (
-        <Box sx={{ backgroundColor: tokens.color.cardBackground, borderRadius: 4 }}>
-          <EmptyState titulo="Sin frentes" mensaje="Todavía no hay frentes configurados." />
-        </Box>
-      )}
-
-      {estado === 'succeeded' && items.length > 0 && (
-        <Box
-          sx={{
-            display: 'grid',
-            gap: 2.5,
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(2, 1fr)',
-              md: 'repeat(3, 1fr)',
-              lg: 'repeat(4, 1fr)',
-            },
-          }}
-        >
-          {items.map((frente) => (
-            <FrenteCard
-              key={frente.id}
-              frente={frente}
-              onAbrir={(slug) => navigate(`/frentes/${slug}`)}
-            />
-          ))}
-        </Box>
-      )}
     </Box>
   )
+}
+
+// 4 tarjetas por fila en lg, 3 en md, 2 en sm, 1 en xs — flex (no grid) para que
+// la última fila incompleta (ej. 3 de 7) quede centrada en vez de pegada a la izquierda.
+const cardBasis = {
+  flex: '1 1 260px',
+  maxWidth: {
+    xs: '100%',
+    sm: 'calc(50% - 10px)',
+    md: 'calc(33.333% - 13.33px)',
+    lg: 'calc(25% - 15px)',
+  },
 }

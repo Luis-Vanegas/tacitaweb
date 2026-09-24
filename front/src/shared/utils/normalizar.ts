@@ -13,6 +13,7 @@ export function normalizarResumenFrente(api: ResumenFrenteApi): ResumenFrente {
     icono: api.icono,
     orden: api.orden,
     totalProcesos: Number(api.totalProcesos),
+    totalActividades: Number(api.totalActividades),
     precontractual: Number(api.precontractual),
     enEjecucion: Number(api.enEjecucion),
     terminados: Number(api.terminados),

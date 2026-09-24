@@ -13,6 +13,7 @@ import {
 import { Dependencia } from './dependencia.entity';
 import { Proyecto } from './proyecto.entity';
 import { ProcesoContratacion } from './proceso-contratacion.entity';
+import { CategoriaActividad } from './categoria-actividad.entity';
 
 @Entity({ name: 'actividad' })
 export class Actividad {
@@ -27,6 +28,9 @@ export class Actividad {
 
   @Column({ type: 'text' })
   nombre!: string;
+
+  @Column({ type: 'smallint', name: 'categoria_id' })
+  categoriaId!: number;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt!: Date;
@@ -46,6 +50,12 @@ export class Actividad {
   })
   @JoinColumn({ name: 'proyecto_id' })
   proyecto!: Proyecto;
+
+  @ManyToOne(() => CategoriaActividad, (categoria) => categoria.actividades, {
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({ name: 'categoria_id' })
+  categoria!: CategoriaActividad;
 
   @OneToMany(() => ProcesoContratacion, (proceso) => proceso.actividad)
   procesos!: ProcesoContratacion[];

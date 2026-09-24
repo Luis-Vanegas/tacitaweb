@@ -4,6 +4,7 @@ import { EstadoProceso } from '@/database/entities/estado-proceso.entity';
 import { Dependencia } from '@/database/entities/dependencia.entity';
 import { Proyecto } from '@/database/entities/proyecto.entity';
 import { Contratista } from '@/database/entities/contratista.entity';
+import { CategoriaActividad } from '@/database/entities/categoria-actividad.entity';
 import { CatalogosController } from './catalogos.controller';
 import { CatalogosService } from './catalogos.service';
 
@@ -14,6 +15,7 @@ import { CatalogosService } from './catalogos.service';
       Dependencia,
       Proyecto,
       Contratista,
+      CategoriaActividad,
     ]),
   ],
   controllers: [CatalogosController],

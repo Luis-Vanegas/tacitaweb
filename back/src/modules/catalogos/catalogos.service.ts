@@ -10,12 +10,14 @@ import { EstadoProceso } from '@/database/entities/estado-proceso.entity';
 import { Dependencia } from '@/database/entities/dependencia.entity';
 import { Proyecto } from '@/database/entities/proyecto.entity';
 import { Contratista } from '@/database/entities/contratista.entity';
+import { CategoriaActividad } from '@/database/entities/categoria-actividad.entity';
 
 export interface CatalogosResponse {
   estados: EstadoProceso[];
   dependencias: Dependencia[];
   proyectos: Proyecto[];
   contratistas: Contratista[];
+  categoriasActividad: CategoriaActividad[];
 }
 
 const TTL_MS = 5 * 60 * 1000;
@@ -33,6 +35,8 @@ export class CatalogosService {
     private readonly proyectoRepository: Repository<Proyecto>,
     @InjectRepository(Contratista)
     private readonly contratistaRepository: Repository<Contratista>,
+    @InjectRepository(CategoriaActividad)
+    private readonly categoriaActividadRepository: Repository<CategoriaActividad>,
   ) {}
 
   async obtener(): Promise<CatalogosResponse> {
@@ -41,7 +45,13 @@ export class CatalogosService {
       return this.cache.valor;
     }
 
-    const [estados, dependencias, proyectos, contratistas] = await Promise.all([
+    const [
+      estados,
+      dependencias,
+      proyectos,
+      contratistas,
+      categoriasActividad,
+    ] = await Promise.all([
       this.estadoRepository.find({ order: { orden: 'ASC' } }),
       this.dependenciaRepository.find({
         where: { activo: true },
@@ -52,6 +62,7 @@ export class CatalogosService {
         order: { nombre: 'ASC' },
       }),
       this.contratistaRepository.find({ order: { nombre: 'ASC' } }),
+      this.categoriaActividadRepository.find({ order: { orden: 'ASC' } }),
     ]);
 
     const valor: CatalogosResponse = {
@@ -59,6 +70,7 @@ export class CatalogosService {
       dependencias,
       proyectos,
       contratistas,
+      categoriasActividad,
     };
     this.cache = { valor, expiraEn: ahora + TTL_MS };
     return valor;

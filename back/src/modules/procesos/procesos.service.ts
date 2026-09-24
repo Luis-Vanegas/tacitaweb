@@ -5,6 +5,7 @@ import {
   ProcesoContratacion,
   TipoProceso,
 } from '@/database/entities/proceso-contratacion.entity';
+import { VProcesoDetalle } from '@/database/entities/views/proceso-detalle.view-entity';
 import {
   CriterioFrenteProceso,
   FrenteProceso,
@@ -31,6 +32,8 @@ export class ProcesosService {
   constructor(
     @InjectRepository(ProcesoContratacion)
     private readonly procesoRepository: Repository<ProcesoContratacion>,
+    @InjectRepository(VProcesoDetalle)
+    private readonly vistaProcesoRepository: Repository<VProcesoDetalle>,
     @InjectRepository(Seguimiento)
     private readonly seguimientoRepository: Repository<Seguimiento>,
     @InjectRepository(FrenteProceso)
@@ -40,16 +43,13 @@ export class ProcesosService {
     private readonly dataSource: DataSource,
   ) {}
 
+  // Usa v_proceso_detalle (como el listado de frentes.service.ts) en vez de
+  // reconstruir el detalle a mano con relations: la vista ya trae los campos
+  // planos que espera el front (estadoColor, dependencia, proyecto...) y los
+  // derivados (diasRestantes, pctPlazo, ultimaNota) que la entidad tabla no tiene.
   async obtenerDetalle(id: string) {
-    const proceso = await this.procesoRepository.findOne({
+    const proceso = await this.vistaProcesoRepository.findOne({
       where: { id },
-      relations: [
-        'actividad',
-        'actividad.dependencia',
-        'actividad.proyecto',
-        'estado',
-        'contratista',
-      ],
     });
     if (!proceso) {
       throw new NotFoundException('Proceso no encontrado');
@@ -61,7 +61,7 @@ export class ProcesosService {
         order: { fecha: 'DESC', id: 'DESC' },
         relations: ['autor', 'estado'],
       }),
-      this.procesoRepository.find({ where: { procesoSupervisadoId: id } }),
+      this.vistaProcesoRepository.find({ where: { procesoSupervisadoId: id } }),
       this.frenteProcesoRepository.find({
         where: { procesoId: id },
         relations: ['frente'],

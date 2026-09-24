@@ -4,6 +4,7 @@ import { RolUsuario } from '@/database/entities/usuario.entity';
 
 describe('ProcesosService', () => {
   let procesoRepo: { findOne: jest.Mock; find: jest.Mock };
+  let vistaProcesoRepo: { findOne: jest.Mock; find: jest.Mock };
   let seguimientoRepo: { find: jest.Mock };
   let frenteProcesoRepo: { find: jest.Mock };
   let usuarioFrenteRepo: { exist: jest.Mock };
@@ -30,6 +31,10 @@ describe('ProcesosService', () => {
 
   beforeEach(() => {
     procesoRepo = { findOne: jest.fn(), find: jest.fn().mockResolvedValue([]) };
+    vistaProcesoRepo = {
+      findOne: jest.fn(),
+      find: jest.fn().mockResolvedValue([]),
+    };
     seguimientoRepo = { find: jest.fn().mockResolvedValue([]) };
     frenteProcesoRepo = { find: jest.fn().mockResolvedValue([]) };
     usuarioFrenteRepo = { exist: jest.fn() };
@@ -52,6 +57,7 @@ describe('ProcesosService', () => {
 
     service = new ProcesosService(
       procesoRepo as any,
+      vistaProcesoRepo as any,
       seguimientoRepo as any,
       frenteProcesoRepo as any,
       usuarioFrenteRepo as any,
@@ -61,7 +67,7 @@ describe('ProcesosService', () => {
 
   describe('obtenerDetalle', () => {
     it('lanza 404 si no existe', async () => {
-      procesoRepo.findOne.mockResolvedValueOnce(null);
+      vistaProcesoRepo.findOne.mockResolvedValueOnce(null);
       await expect(service.obtenerDetalle('99')).rejects.toBeInstanceOf(
         NotFoundException,
       );
@@ -70,7 +76,7 @@ describe('ProcesosService', () => {
 
   describe('cambiarEstado', () => {
     it('actualiza el estado y crea la nota de seguimiento en la misma transacción', async () => {
-      procesoRepo.findOne.mockResolvedValue({ id: '10' });
+      vistaProcesoRepo.findOne.mockResolvedValue({ id: '10' });
 
       await service.cambiarEstado(
         '10',
@@ -116,7 +122,7 @@ describe('ProcesosService', () => {
     });
 
     it('EDITOR con el frente del proceso puede cambiar el estado', async () => {
-      procesoRepo.findOne.mockResolvedValue({ id: '10' });
+      vistaProcesoRepo.findOne.mockResolvedValue({ id: '10' });
       frenteProcesoRepo.find.mockResolvedValueOnce([{ frenteId: 7 }]);
       usuarioFrenteRepo.exist.mockResolvedValueOnce(true);
 

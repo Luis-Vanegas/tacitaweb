@@ -32,9 +32,16 @@ export interface Contratista {
   nit: string | null
 }
 
+export interface CategoriaActividad {
+  id: number
+  nombre: string
+  orden: number
+}
+
 export interface CatalogosRespuesta {
   estados: EstadoProceso[]
   dependencias: Dependencia[]
   proyectos: Proyecto[]
   contratistas: Contratista[]
+  categoriasActividad: CategoriaActividad[]
 }

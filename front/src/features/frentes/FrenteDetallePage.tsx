@@ -13,11 +13,9 @@ import Alert from '@mui/material/Alert'
 import CircularProgress from '@mui/material/CircularProgress'
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined'
 import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined'
-import FilterListOutlinedIcon from '@mui/icons-material/FilterListOutlined'
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined'
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined'
-import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline'
-import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty'
+import ListAltOutlinedIcon from '@mui/icons-material/ListAltOutlined'
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined'
 import EventBusyOutlinedIcon from '@mui/icons-material/EventBusyOutlined'
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined'
@@ -31,7 +29,6 @@ import { http } from '@/shared/api/http'
 import { endpoints } from '@/shared/api/endpoints'
 import { catalogosRequest } from '@/features/catalogos/catalogosSlice'
 import { frenteDetalleRequest, limpiarFrenteDetalle } from './frentesSlice'
-import { ProcesoStepper } from './ProcesoStepper'
 import { PersonalTab } from './PersonalTab'
 import { ProcesosTab } from '@/features/procesos/ProcesosTab'
 
@@ -50,7 +47,6 @@ export function FrenteDetallePage() {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [estadoIdFiltro, setEstadoIdFiltro] = useState<number | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [exportando, setExportando] = useState(false)
   const [errorExportar, setErrorExportar] = useState<string | null>(null)
@@ -65,7 +61,6 @@ export function FrenteDetallePage() {
 
   useEffect(() => {
     dispatch(frenteDetalleRequest(slug))
-    setEstadoIdFiltro(null)
     return () => {
       dispatch(limpiarFrenteDetalle())
     }
@@ -140,15 +135,6 @@ export function FrenteDetallePage() {
                 <RefreshOutlinedIcon />
               </IconButton>
             </Tooltip>
-            <Tooltip title={estadoIdFiltro ? 'Quitar filtro de estado' : 'Filtros activos en la tabla'}>
-              <IconButton
-                aria-label="Filtros"
-                onClick={() => setEstadoIdFiltro(null)}
-                sx={{ color: '#fff' }}
-              >
-                <FilterListOutlinedIcon />
-              </IconButton>
-            </Tooltip>
             {data && (
               <PdfDownloadButton
                 document={<FrentePdfDocument frente={data} />}
@@ -190,28 +176,21 @@ export function FrenteDetallePage() {
         )}
 
         {data && (
-          <>
-            <Stack direction="row" spacing={2} flexWrap="wrap" sx={{ mb: 3, rowGap: 2 }}>
-              <KpiCard etiqueta="Total procesos" valor={data.totalProcesos} icono={AssignmentOutlinedIcon} />
-              <KpiCard etiqueta="En ejecución" valor={data.enEjecucion} icono={PlayCircleOutlineIcon} color={tokens.color.success} />
-              <KpiCard etiqueta="Precontractual" valor={data.precontractual} icono={HourglassEmptyIcon} color={tokens.color.info} />
-              <KpiCard etiqueta="Alertas" valor={data.alertas} icono={WarningAmberOutlinedIcon} color="#DC3545" />
-              <KpiCard etiqueta="Próximos a vencer (≤30 d)" valor={data.proximosVencer} icono={EventBusyOutlinedIcon} color="#FD7E14" />
-              <KpiCard
-                etiqueta="Personal actual / pendiente"
-                valor={`${data.personalActual} / ${data.personalPendiente}`}
-                icono={GroupsOutlinedIcon}
-              />
-            </Stack>
-
-            <Box sx={{ mb: 3 }}>
-              <ProcesoStepper
-                conteo={data.conteoPorEstado}
-                estadoIdSeleccionado={estadoIdFiltro}
-                onSeleccionar={setEstadoIdFiltro}
-              />
-            </Box>
-          </>
+          // "Precontractual"/"En ejecución" no van acá: son un estado real
+          // del filtro de la tabla de abajo (select "Estado" en ProcesosTab),
+          // repetirlos acá era mostrar el mismo número dos veces con dos
+          // nombres distintos, uno de los cuales ni siquiera filtraba.
+          <Stack direction="row" spacing={2} flexWrap="wrap" sx={{ mb: 3, rowGap: 2 }}>
+            <KpiCard etiqueta="Actividades" valor={data.totalActividades} icono={ListAltOutlinedIcon} />
+            <KpiCard etiqueta="Total procesos" valor={data.totalProcesos} icono={AssignmentOutlinedIcon} />
+            <KpiCard etiqueta="Alertas" valor={data.alertas} icono={WarningAmberOutlinedIcon} color="#DC3545" />
+            <KpiCard etiqueta="Próximos a vencer (≤30 d)" valor={data.proximosVencer} icono={EventBusyOutlinedIcon} color="#FD7E14" />
+            <KpiCard
+              etiqueta="Personal actual / pendiente"
+              valor={`${data.personalActual} / ${data.personalPendiente}`}
+              icono={GroupsOutlinedIcon}
+            />
+          </Stack>
         )}
 
         <Tabs value={tabActual} onChange={cambiarTab} sx={{ mb: 3 }}>
@@ -221,7 +200,7 @@ export function FrenteDetallePage() {
         </Tabs>
 
         {tabActual === 'procesos' && slug && (
-          <ProcesosTab key={refreshKey} slug={slug} estadoIdExterno={estadoIdFiltro} />
+          <ProcesosTab key={refreshKey} slug={slug} conteoPorEstado={data?.conteoPorEstado ?? []} />
         )}
         {tabActual === 'personal' && slug && <PersonalTab slug={slug} />}
         {tabActual === 'bitacora' && (

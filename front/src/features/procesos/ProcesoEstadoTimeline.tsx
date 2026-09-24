@@ -30,9 +30,9 @@ function EstadoStepIcon({ color, actual }: { color: string; actual: boolean }) {
 }
 
 // Línea de tiempo VERTICAL de estado_proceso (ordenada por `orden`), distinta
-// del ProcesoStepper HORIZONTAL de FrenteDetallePage (ese filtra la tabla de
-// procesos; este vive en la ficha y dispara un cambio de estado real). Los
-// colores salen de estado_proceso.color (API), igual que EstadoChip.
+// del select "Estado" de ProcesosTab (ese filtra la tabla de procesos; este
+// vive en la ficha y dispara un cambio de estado real). Los colores salen de
+// estado_proceso.color (API), igual que EstadoChip.
 export function ProcesoEstadoTimeline({
   estados,
   estadoActualId,

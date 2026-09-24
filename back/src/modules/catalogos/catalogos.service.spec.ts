@@ -5,6 +5,7 @@ describe('CatalogosService', () => {
   let dependenciaRepo: { find: jest.Mock };
   let proyectoRepo: { find: jest.Mock };
   let contratistaRepo: { find: jest.Mock };
+  let categoriaActividadRepo: { find: jest.Mock };
   let service: CatalogosService;
 
   beforeEach(() => {
@@ -12,16 +13,20 @@ describe('CatalogosService', () => {
     dependenciaRepo = { find: jest.fn().mockResolvedValue(['dependencia']) };
     proyectoRepo = { find: jest.fn().mockResolvedValue(['proyecto']) };
     contratistaRepo = { find: jest.fn().mockResolvedValue(['contratista']) };
+    categoriaActividadRepo = {
+      find: jest.fn().mockResolvedValue(['categoria']),
+    };
 
     service = new CatalogosService(
       estadoRepo as any,
       dependenciaRepo as any,
       proyectoRepo as any,
       contratistaRepo as any,
+      categoriaActividadRepo as any,
     );
   });
 
-  it('consulta los 4 repos la primera vez', async () => {
+  it('consulta los 5 repos la primera vez', async () => {
     const resultado = await service.obtener();
 
     expect(resultado).toEqual({
@@ -29,6 +34,7 @@ describe('CatalogosService', () => {
       dependencias: ['dependencia'],
       proyectos: ['proyecto'],
       contratistas: ['contratista'],
+      categoriasActividad: ['categoria'],
     });
     expect(estadoRepo.find).toHaveBeenCalledTimes(1);
   });

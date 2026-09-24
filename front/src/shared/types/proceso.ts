@@ -34,6 +34,8 @@ export interface ProcesoDetalle {
   ultimaNotaFecha: string | null
   ultimaNota: string | null
   updatedAt: string
+  categoriaActividadId: number
+  categoriaActividad: string
 }
 
 // Query params de GET /frentes/:slug/procesos

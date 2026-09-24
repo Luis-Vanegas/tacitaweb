@@ -15,6 +15,7 @@ import { PrimaryColumn, ViewColumn, ViewEntity } from 'typeorm';
       f.icono,
       f.orden,
       coalesce(pp.total_procesos, 0)       as total_procesos,
+      coalesce(pp.total_actividades, 0)    as total_actividades,
       coalesce(pp.precontractual, 0)       as precontractual,
       coalesce(pp.en_ejecucion, 0)         as en_ejecucion,
       coalesce(pp.terminados, 0)           as terminados,
@@ -26,6 +27,7 @@ import { PrimaryColumn, ViewColumn, ViewEntity } from 'typeorm';
     left join lateral (
       select
         count(*)                                                     as total_procesos,
+        count(distinct v.actividad_id)                                as total_actividades,
         count(*) filter (where v.fase = 'PRECONTRACTUAL')            as precontractual,
         count(*) filter (where v.fase = 'CONTRACTUAL')               as en_ejecucion,
         count(*) filter (where v.fase = 'POSCONTRACTUAL')            as terminados,
@@ -73,6 +75,9 @@ export class VResumenFrente {
 
   @ViewColumn({ name: 'total_procesos' })
   totalProcesos!: string;
+
+  @ViewColumn({ name: 'total_actividades' })
+  totalActividades!: string;
 
   @ViewColumn()
   precontractual!: string;

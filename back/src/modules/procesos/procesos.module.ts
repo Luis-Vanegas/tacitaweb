@@ -4,6 +4,7 @@ import { ProcesoContratacion } from '@/database/entities/proceso-contratacion.en
 import { Seguimiento } from '@/database/entities/seguimiento.entity';
 import { FrenteProceso } from '@/database/entities/frente-proceso.entity';
 import { UsuarioFrente } from '@/database/entities/usuario-frente.entity';
+import { VProcesoDetalle } from '@/database/entities/views/proceso-detalle.view-entity';
 import { ProcesosController } from './procesos.controller';
 import { ProcesosService } from './procesos.service';
 
@@ -14,6 +15,7 @@ import { ProcesosService } from './procesos.service';
       Seguimiento,
       FrenteProceso,
       UsuarioFrente,
+      VProcesoDetalle,
     ]),
   ],
   controllers: [ProcesosController],
