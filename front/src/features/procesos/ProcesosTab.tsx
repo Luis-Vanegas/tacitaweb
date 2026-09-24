@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import Box from '@mui/material/Box'
+import Chip from '@mui/material/Chip'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import MenuItem from '@mui/material/MenuItem'
@@ -44,6 +45,11 @@ import { procesosRequest } from './procesosSlice'
 interface ProcesosTabProps {
   slug: string
   conteoPorEstado: ConteoPorEstado[]
+  // Disparado por las tarjetas KPI del frente (FrenteDetallePage): valor
+  // inicial de los filtros rápidos "Alertas" / "Próximos a vencer". Cambiarlo
+  // remonta esta tab (el padre le pasa una `key` distinta), no se sincroniza
+  // en caliente.
+  filtroInicial?: { esAlerta?: boolean; proximosVencer?: boolean }
 }
 
 type GrupoActividad = [string, ProcesoDetalle[]]
@@ -69,7 +75,7 @@ function formatearFecha(fecha: string | null): string {
   return fecha
 }
 
-export function ProcesosTab({ slug, conteoPorEstado }: ProcesosTabProps) {
+export function ProcesosTab({ slug, conteoPorEstado, filtroInicial }: ProcesosTabProps) {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const { estado, error, data } = useAppSelector((s) => s.procesos)
@@ -83,6 +89,8 @@ export function ProcesosTab({ slug, conteoPorEstado }: ProcesosTabProps) {
   // Reemplaza al viejo ProcesoStepper (fila de círculos grandes fuera de esta
   // tab): mismo filtro por estado, como un select más en esta fila.
   const [estadoIdFiltro, setEstadoIdFiltro] = useState<number | ''>('')
+  const [esAlerta, setEsAlerta] = useState(filtroInicial?.esAlerta ?? false)
+  const [proximosVencer, setProximosVencer] = useState(filtroInicial?.proximosVencer ?? false)
   const [dialogoCrearAbierto, setDialogoCrearAbierto] = useState(false)
   // Cada actividad arranca colapsada: el usuario ve primero la lista de
   // actividades del frente, no los contratos, y abre la que le interesa.
@@ -121,13 +129,15 @@ export function ProcesosTab({ slug, conteoPorEstado }: ProcesosTabProps) {
       dependencia: dependencia || undefined,
       tipo: tipo || undefined,
       estado: estadoCodigoFiltro,
+      esAlerta: esAlerta || undefined,
+      proximosVencer: proximosVencer || undefined,
     }
   }
 
   useEffect(() => {
     dispatch(procesosRequest({ slug, filtro: filtroActual() }))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, slug, debouncedQ, fase, dependencia, tipo, estadoCodigoFiltro])
+  }, [dispatch, slug, debouncedQ, fase, dependencia, tipo, estadoCodigoFiltro, esAlerta, proximosVencer])
 
   // Tras crear con éxito: cerrar el diálogo, refrescar la tabla (redispatch
   // del mismo fetch que ya usa la tab) y limpiar la mutación para la próxima vez.
@@ -238,6 +248,16 @@ export function ProcesosTab({ slug, conteoPorEstado }: ProcesosTabProps) {
             </MenuItem>
           ))}
         </TextField>
+        {esAlerta && (
+          <Chip label="Alertas" color="error" onDelete={() => setEsAlerta(false)} sx={{ alignSelf: 'center' }} />
+        )}
+        {proximosVencer && (
+          <Chip
+            label="Próximos a vencer"
+            sx={{ alignSelf: 'center', backgroundColor: '#FD7E14', color: '#fff' }}
+            onDelete={() => setProximosVencer(false)}
+          />
+        )}
         <Tooltip title={estadoIdInicial === null ? 'Cargando catálogo de estados…' : ''}>
           <span style={{ marginLeft: 'auto' }}>
             <Button

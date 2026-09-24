@@ -11,6 +11,7 @@ import Stack from '@mui/material/Stack'
 import Snackbar from '@mui/material/Snackbar'
 import Alert from '@mui/material/Alert'
 import CircularProgress from '@mui/material/CircularProgress'
+import ArrowBackOutlinedIcon from '@mui/icons-material/ArrowBackOutlined'
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined'
 import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined'
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined'
@@ -32,7 +33,11 @@ import { frenteDetalleRequest, limpiarFrenteDetalle } from './frentesSlice'
 import { PersonalTab } from './PersonalTab'
 import { ProcesosTab } from '@/features/procesos/ProcesosTab'
 
-type TabId = 'procesos' | 'personal' | 'bitacora'
+type TabId = 'procesos' | 'personal'
+
+// SIF y Medio Ambiente suman personal de tipos que no deberían acumularse en
+// un solo total (pedido explícito): se oculta esa tarjeta solo para ellos.
+const FRENTES_SIN_KPI_PERSONAL = new Set(['sif', 'medio-ambiente'])
 
 // Content-Disposition real que manda el backend (FrentesController.exportar):
 // `attachment; filename="<slug>-<fecha>.xlsx"`. Se parsea en vez de inventar
@@ -50,6 +55,11 @@ export function FrenteDetallePage() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [exportando, setExportando] = useState(false)
   const [errorExportar, setErrorExportar] = useState<string | null>(null)
+  // Filtro rápido disparado por las tarjetas KPI (Alertas / Próximos a
+  // vencer / limpiar). Cambia la `key` de ProcesosTab para remontarla con el
+  // nuevo valor inicial, en vez de levantar todo su estado de filtros acá.
+  const [filtroRapido, setFiltroRapido] = useState<{ esAlerta?: boolean; proximosVencer?: boolean } | null>(null)
+  const [filtroRapidoKey, setFiltroRapidoKey] = useState(0)
 
   const { estado, error, data } = useAppSelector((s) => s.frentes.detalle)
 
@@ -76,6 +86,15 @@ export function FrenteDetallePage() {
   function refrescar() {
     dispatch(frenteDetalleRequest(slug))
     setRefreshKey((k) => k + 1)
+  }
+
+  function aplicarFiltroRapido(filtro: { esAlerta?: boolean; proximosVencer?: boolean } | null) {
+    setFiltroRapido(filtro)
+    setFiltroRapidoKey((k) => k + 1)
+    setSearchParams((prev) => {
+      prev.set('tab', 'procesos')
+      return prev
+    })
   }
 
   // Descarga directa del blob (no hay saga acá: es un side-effect de UI, no
@@ -125,6 +144,11 @@ export function FrenteDetallePage() {
           </Box>
 
           <Stack direction="row" spacing={0.5}>
+            <Tooltip title="Volver">
+              <IconButton aria-label="Volver a la pantalla anterior" onClick={() => navigate(-1)} sx={{ color: '#fff' }}>
+                <ArrowBackOutlinedIcon />
+              </IconButton>
+            </Tooltip>
             <Tooltip title="Ir al menú">
               <IconButton aria-label="Ir al menú de frentes" onClick={() => navigate('/')} sx={{ color: '#fff' }}>
                 <HomeOutlinedIcon />
@@ -182,30 +206,50 @@ export function FrenteDetallePage() {
           // nombres distintos, uno de los cuales ni siquiera filtraba.
           <Stack direction="row" spacing={2} flexWrap="wrap" sx={{ mb: 3, rowGap: 2 }}>
             <KpiCard etiqueta="Actividades" valor={data.totalActividades} icono={ListAltOutlinedIcon} />
-            <KpiCard etiqueta="Total procesos" valor={data.totalProcesos} icono={AssignmentOutlinedIcon} />
-            <KpiCard etiqueta="Alertas" valor={data.alertas} icono={WarningAmberOutlinedIcon} color="#DC3545" />
-            <KpiCard etiqueta="Próximos a vencer (≤30 d)" valor={data.proximosVencer} icono={EventBusyOutlinedIcon} color="#FD7E14" />
             <KpiCard
-              etiqueta="Personal actual / pendiente"
-              valor={`${data.personalActual} / ${data.personalPendiente}`}
-              icono={GroupsOutlinedIcon}
+              etiqueta="Total procesos"
+              valor={data.totalProcesos}
+              icono={AssignmentOutlinedIcon}
+              onClick={() => aplicarFiltroRapido(null)}
             />
+            <KpiCard
+              etiqueta="Alertas"
+              valor={data.alertas}
+              icono={WarningAmberOutlinedIcon}
+              color="#DC3545"
+              onClick={() => aplicarFiltroRapido({ esAlerta: true })}
+            />
+            <KpiCard
+              etiqueta="Próximos a vencer (≤30 d)"
+              valor={data.proximosVencer}
+              icono={EventBusyOutlinedIcon}
+              color="#FD7E14"
+              onClick={() => aplicarFiltroRapido({ proximosVencer: true })}
+            />
+            {!FRENTES_SIN_KPI_PERSONAL.has(slug) && (
+              <KpiCard
+                etiqueta="Personal actual / pendiente"
+                valor={`${data.personalActual} / ${data.personalPendiente}`}
+                icono={GroupsOutlinedIcon}
+              />
+            )}
           </Stack>
         )}
 
         <Tabs value={tabActual} onChange={cambiarTab} sx={{ mb: 3 }}>
           <Tab label="Procesos" value="procesos" />
           <Tab label="Personal" value="personal" />
-          <Tab label="Bitácora" value="bitacora" />
         </Tabs>
 
         {tabActual === 'procesos' && slug && (
-          <ProcesosTab key={refreshKey} slug={slug} conteoPorEstado={data?.conteoPorEstado ?? []} />
+          <ProcesosTab
+            key={`${refreshKey}-${filtroRapidoKey}`}
+            slug={slug}
+            conteoPorEstado={data?.conteoPorEstado ?? []}
+            filtroInicial={filtroRapido ?? undefined}
+          />
         )}
         {tabActual === 'personal' && slug && <PersonalTab slug={slug} />}
-        {tabActual === 'bitacora' && (
-          <Typography color="text.secondary">Próximamente (Fase 5).</Typography>
-        )}
       </Box>
 
       <Snackbar

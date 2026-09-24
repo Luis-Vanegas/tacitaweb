@@ -9,11 +9,15 @@ interface KpiCardProps {
   valor: number | string
   icono?: SvgIconComponent
   color?: string
+  onClick?: () => void
 }
 
-export function KpiCard({ etiqueta, valor, icono: Icono, color }: KpiCardProps) {
+export function KpiCard({ etiqueta, valor, icono: Icono, color, onClick }: KpiCardProps) {
   return (
-    <Card sx={{ flex: '1 1 160px', minWidth: 160 }}>
+    <Card
+      sx={{ flex: '1 1 160px', minWidth: 160, cursor: onClick ? 'pointer' : 'default' }}
+      onClick={onClick}
+    >
       <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
         {Icono && (
           <Box

@@ -16,6 +16,7 @@ import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
 import DialogActions from '@mui/material/DialogActions'
 import CircularProgress from '@mui/material/CircularProgress'
+import ArrowBackOutlinedIcon from '@mui/icons-material/ArrowBackOutlined'
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined'
 import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
@@ -138,6 +139,11 @@ export function ProcesoFichaPage() {
           </Box>
 
           <Stack direction="row" spacing={0.5} alignItems="center">
+            <Tooltip title="Volver">
+              <IconButton aria-label="Volver a la pantalla anterior" onClick={() => navigate(-1)} sx={{ color: '#fff' }}>
+                <ArrowBackOutlinedIcon />
+              </IconButton>
+            </Tooltip>
             <Tooltip title="Ir al menú">
               <IconButton aria-label="Ir al menú de frentes" onClick={() => navigate('/')} sx={{ color: '#fff' }}>
                 <HomeOutlinedIcon />

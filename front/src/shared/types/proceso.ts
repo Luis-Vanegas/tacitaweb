@@ -47,6 +47,8 @@ export interface FiltroProcesosFrente {
   fase?: FaseProceso
   dependencia?: number
   tipo?: TipoProceso
+  esAlerta?: boolean
+  proximosVencer?: boolean
   q?: string
   orden?: string
 }
