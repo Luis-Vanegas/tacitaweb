@@ -31,7 +31,13 @@ async function crearHandler() {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const handler = async (event: any, context: any) => {
   if (!handlerPromise) {
-    handlerPromise = crearHandler();
+    // Si crearHandler() falla (p. ej. env vars mal cargadas), no cachea el
+    // rechazo: limpia la promesa para que la próxima invocación reintente
+    // en vez de repetir el mismo error para siempre en este contenedor tibio.
+    handlerPromise = crearHandler().catch((error) => {
+      handlerPromise = null;
+      throw error;
+    });
   }
   const h = await handlerPromise;
   return h(event, context);
