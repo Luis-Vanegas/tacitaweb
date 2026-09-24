@@ -15,6 +15,7 @@ const frenteBase: ResumenFrente = {
   icono: 'Construction',
   orden: 1,
   totalProcesos: 34,
+  totalActividades: 27,
   precontractual: 5,
   enEjecucion: 20,
   terminados: 9,

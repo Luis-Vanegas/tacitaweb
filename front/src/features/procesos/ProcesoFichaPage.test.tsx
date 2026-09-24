@@ -86,6 +86,8 @@ const fichaBase: ProcesoFicha = {
   ultimaNotaFecha: '2026-02-01',
   ultimaNota: 'Avance normal',
   updatedAt: '2026-02-01T00:00:00.000Z',
+  categoriaActividadId: 5,
+  categoriaActividad: 'Seguridad / Espacio público operativo',
   bitacora: [
     {
       id: 'seg-1',
@@ -138,6 +140,7 @@ describe('ProcesoFichaPage', () => {
         dependencias: [],
         proyectos: [],
         contratistas: [],
+        categoriasActividad: [],
       },
     })
 
