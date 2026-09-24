@@ -7,18 +7,16 @@
 [functions]
   directory = "netlify/functions"
   # Netlify usa esbuild igual para funciones .ts sin importar node_bundler
-  # (zisi no transpila TypeScript), así que la única forma de evitar sus dos
-  # problemas reales es marcar external_node_modules en vez de sacar esbuild:
-  # - @nestjs/websockets y @nestjs/microservices: requires dinámicos y
-  #   opcionales de @nestjs/core (no estan instalados, rompian el build con
-  #   "Could not resolve").
-  # - @nestjs/mapped-types: usa createRequire(__filename) para resolver
-  #   rutas relativas; si esbuild lo inlinea en el bundle, __filename ya no
-  #   apunta a su ubicación real y rompe en runtime (error real:
-  #   "TypeError: filename must be..."). External hace que Netlify copie el
-  #   paquete real en vez de reempaquetarlo.
+  # (zisi no transpila TypeScript). @nestjs/websockets y @nestjs/microservices
+  # son requires dinamicos y opcionales de @nestjs/core (no estan instalados,
+  # rompian el build con "Could not resolve") -> van external.
+  # @nestjs/mapped-types NO va external: se publica como ESM puro
+  # ("type": "module", sin build CJS) y Netlify solo puede `require()` un
+  # external tal cual -> rompe con ERR_REQUIRE_ESM. Dejando que esbuild lo
+  # bundlee (inline) lo convierte a CJS al empaquetar, que es justo lo que
+  # necesita.
   node_bundler = "esbuild"
-  external_node_modules = ["@nestjs/websockets", "@nestjs/microservices", "@nestjs/mapped-types"]
+  external_node_modules = ["@nestjs/websockets", "@nestjs/microservices"]
 
 [[redirects]]
   force = true
