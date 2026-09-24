@@ -6,12 +6,19 @@
 
 [functions]
   directory = "netlify/functions"
-  # SIN node_bundler = "esbuild" a propósito: Nest/TypeORM usan requires
-  # dinámicos y trucos de Node (createRequire con __filename, reflection) que
-  # se rompen cuando esbuild concatena todo en un solo archivo (error real:
-  # "@nestjs/mapped-types" fallaba en runtime con esbuild). El default
-  # "zisi" copia node_modules real en vez de reempaquetar, y no tiene ese
-  # problema — bundle más pesado, pero es el que efectivamente funciona.
+  # Netlify usa esbuild igual para funciones .ts sin importar node_bundler
+  # (zisi no transpila TypeScript), así que la única forma de evitar sus dos
+  # problemas reales es marcar external_node_modules en vez de sacar esbuild:
+  # - @nestjs/websockets y @nestjs/microservices: requires dinámicos y
+  #   opcionales de @nestjs/core (no estan instalados, rompian el build con
+  #   "Could not resolve").
+  # - @nestjs/mapped-types: usa createRequire(__filename) para resolver
+  #   rutas relativas; si esbuild lo inlinea en el bundle, __filename ya no
+  #   apunta a su ubicación real y rompe en runtime (error real:
+  #   "TypeError: filename must be..."). External hace que Netlify copie el
+  #   paquete real en vez de reempaquetarlo.
+  node_bundler = "esbuild"
+  external_node_modules = ["@nestjs/websockets", "@nestjs/microservices", "@nestjs/mapped-types"]
 
 [[redirects]]
   force = true
