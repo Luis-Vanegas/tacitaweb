@@ -21,7 +21,12 @@ export function databaseConfig(
     ssl: ssl ? { rejectUnauthorized: false } : false,
     migrationsTableName: 'typeorm_migrations',
     migrationsTransactionMode: 'each',
-    entities: [join(__dirname, '..', '**', '*.entity.{ts,js}')],
+    // *.entity.ts (tablas) + *.view-entity.ts (@ViewEntity de solo lectura,
+    // sufijo distinto a propósito para no confundirlas con las tablas).
+    entities: [
+      join(__dirname, '..', '**', '*.entity.{ts,js}'),
+      join(__dirname, '..', '**', '*.view-entity.{ts,js}'),
+    ],
     migrations: [join(__dirname, '..', 'database', 'migrations', '*.{ts,js}')],
     autoLoadEntities: false,
   };
