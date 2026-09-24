@@ -96,6 +96,10 @@ export function ProcesosTab({ slug, conteoPorEstado, filtroInicial }: ProcesosTa
   // actividades del frente, no los contratos, y abre la que le interesa.
   const [actividadesAbiertas, setActividadesAbiertas] = useState<Set<string>>(new Set())
   const debouncedQ = useDebounce(q, 350)
+  // Pedido explícito: EMVARIAS no muestra detalle de contrato (número,
+  // contratista, fechas), ni para los procesos que sí lo tienen cargado —
+  // solo la lista de actividades.
+  const soloActividad = slug === 'emvarias'
 
   function toggleActividad(actividad: string) {
     setActividadesAbiertas((prev) => {
@@ -331,6 +335,7 @@ export function ProcesosTab({ slug, conteoPorEstado, filtroInicial }: ProcesosTa
                     abierto={actividadesAbiertas.has(actividad)}
                     onToggle={() => toggleActividad(actividad)}
                     onAbrir={(id) => navigate(`/procesos/${id}`)}
+                    soloActividad={soloActividad}
                   />
                 ))}
               </Box>
@@ -368,13 +373,51 @@ function TarjetaActividad({
   abierto,
   onToggle,
   onAbrir,
+  soloActividad,
 }: {
   actividad: string
   procesos: ProcesoDetalle[]
   abierto: boolean
   onToggle: () => void
   onAbrir: (id: string) => void
+  soloActividad?: boolean
 }) {
+  if (soloActividad) {
+    // Desglose de sub-actividades (ej. "Limpieza urbana"), guardado en la
+    // observación del proceso — no es dato de contrato, es la única
+    // información que puede acompañar a la actividad acá.
+    const desglose = procesos.find((p) => p.observacion)?.observacion
+    return (
+      <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
+        <Box
+          onClick={desglose ? onToggle : undefined}
+          sx={{ px: 1.25, py: 1, cursor: desglose ? 'pointer' : 'default' }}
+        >
+          <Stack direction="row" alignItems="center" spacing={0.75}>
+            {desglose && (abierto ? <ExpandMoreIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />)}
+            <Typography
+              title={actividad}
+              sx={{
+                fontWeight: 700,
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}
+            >
+              {actividad}
+            </Typography>
+          </Stack>
+        </Box>
+        {desglose && abierto && (
+          <Typography variant="body2" color="text.secondary" sx={{ px: 1.25, pb: 1.25 }}>
+            {desglose}
+          </Typography>
+        )}
+      </Paper>
+    )
+  }
+
   return (
     <Paper
       variant="outlined"
