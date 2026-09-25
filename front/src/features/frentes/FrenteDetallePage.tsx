@@ -30,13 +30,15 @@ import { http } from '@/shared/api/http'
 import { endpoints } from '@/shared/api/endpoints'
 import { catalogosRequest } from '@/features/catalogos/catalogosSlice'
 import { frenteDetalleRequest, limpiarFrenteDetalle } from './frentesSlice'
+import { personalRequest } from './personalSlice'
 import { PersonalTab } from './PersonalTab'
 import { ProcesosTab } from '@/features/procesos/ProcesosTab'
 
 type TabId = 'procesos' | 'personal'
 
 // SIF y Medio Ambiente suman personal de tipos que no deberían acumularse en
-// un solo total (pedido explícito): se oculta esa tarjeta solo para ellos.
+// un solo total (pedido explícito): en vez de la tarjeta combinada, se
+// muestra una tarjeta por tipo de personal (ver personalVigente más abajo).
 const FRENTES_SIN_KPI_PERSONAL = new Set(['sif', 'medio-ambiente'])
 
 // Esqueleto de carga: la cantidad tiene que anticipar cuántas tarjetas KPI va
@@ -70,6 +72,10 @@ export function FrenteDetallePage() {
   const [filtroRapidoKey, setFiltroRapidoKey] = useState(0)
 
   const { estado, error, data } = useAppSelector((s) => s.frentes.detalle)
+  // Solo se usa para las tarjetas KPI por tipo de SIF/Medio Ambiente (ver
+  // FRENTES_SIN_KPI_PERSONAL): el resto de los frentes muestra el total
+  // combinado que ya viene en `data`, sin pedir esto de más.
+  const personalVigente = useAppSelector((s) => s.personal.data?.vigente ?? [])
 
   const tabActual = (searchParams.get('tab') as TabId | null) ?? 'procesos'
 
@@ -81,6 +87,12 @@ export function FrenteDetallePage() {
     dispatch(frenteDetalleRequest(slug))
     return () => {
       dispatch(limpiarFrenteDetalle())
+    }
+  }, [dispatch, slug])
+
+  useEffect(() => {
+    if (FRENTES_SIN_KPI_PERSONAL.has(slug)) {
+      dispatch(personalRequest(slug))
     }
   }, [dispatch, slug])
 
@@ -244,13 +256,22 @@ export function FrenteDetallePage() {
                   color="#FD7E14"
                   onClick={() => aplicarFiltroRapido({ proximosVencer: true })}
                 />
-                {!FRENTES_SIN_KPI_PERSONAL.has(slug) && (
-                  <KpiCard
-                    etiqueta="Personal actual / pendiente"
-                    valor={`${data.personalActual} / ${data.personalPendiente}`}
-                    icono={GroupsOutlinedIcon}
-                  />
-                )}
+                {FRENTES_SIN_KPI_PERSONAL.has(slug)
+                  ? personalVigente.map((v) => (
+                      <KpiCard
+                        key={v.tipoPersonalId}
+                        etiqueta={`Personal · ${v.tipoPersonal}`}
+                        valor={`${v.actual} / ${v.pendiente}`}
+                        icono={GroupsOutlinedIcon}
+                      />
+                    ))
+                  : (
+                      <KpiCard
+                        etiqueta="Personal actual / pendiente"
+                        valor={`${data.personalActual} / ${data.personalPendiente}`}
+                        icono={GroupsOutlinedIcon}
+                      />
+                    )}
               </>
             )}
           </Stack>
