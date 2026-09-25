@@ -47,7 +47,7 @@ export function FrenteCard({ frente, onAbrir }: FrenteCardProps) {
             abrir()
           }
         }}
-        aria-label={`Abrir frente ${frente.nombre}: ${frente.totalProcesos} procesos, ${frente.alertas} alertas`}
+        aria-label={`Abrir frente ${frente.nombre}: ${frente.totalProcesos} actividades, ${frente.alertas} alertas`}
         sx={{ height: '100%', p: 2.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}
       >
         <Box
@@ -74,7 +74,7 @@ export function FrenteCard({ frente, onAbrir }: FrenteCardProps) {
           <Chip
             size="small"
             icon={<AssignmentOutlinedIcon aria-hidden="true" />}
-            label={`${frente.totalProcesos} procesos`}
+            label={`${frente.totalProcesos} actividades`}
           />
           <Chip
             size="small"

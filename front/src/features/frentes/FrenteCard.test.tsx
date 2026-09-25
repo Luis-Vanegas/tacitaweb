@@ -33,7 +33,7 @@ describe('FrenteCard', () => {
   it('muestra el nombre y los conteos del frente', () => {
     renderConTema(<FrenteCard frente={frenteBase} onAbrir={vi.fn()} />)
     expect(screen.getByText('SIF')).toBeInTheDocument()
-    expect(screen.getByText('34 procesos')).toBeInTheDocument()
+    expect(screen.getByText('34 actividades')).toBeInTheDocument()
     expect(screen.getByText('3 alertas')).toBeInTheDocument()
     expect(screen.queryByText(/personal/)).not.toBeInTheDocument()
   })
