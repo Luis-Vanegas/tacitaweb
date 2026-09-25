@@ -69,7 +69,12 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie(REFRESH_COOKIE, { path: REFRESH_COOKIE_PATH });
+    const enProduccion = process.env.NODE_ENV === 'production';
+    res.clearCookie(REFRESH_COOKIE, {
+      path: REFRESH_COOKIE_PATH,
+      secure: enProduccion,
+      sameSite: enProduccion ? 'none' : 'lax',
+    });
     return { ok: true };
   }
 
@@ -79,10 +84,17 @@ export class AuthController {
   }
 
   private setRefreshCookie(res: Response, token: string): void {
+    const enProduccion = process.env.NODE_ENV === 'production';
     res.cookie(REFRESH_COOKIE, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: enProduccion,
+      // 'none' en producción: front (Vercel) y back (Netlify) son dominios
+      // distintos, la cookie viaja cross-site. Con 'strict' el navegador
+      // jamás la manda ahí, así que en cuanto vence el access token (15m,
+      // ver app.module.ts) /auth/refresh falla siempre y el usuario cae a
+      // /login sin aviso, aunque su sesión siga vigente. 'none' exige
+      // 'secure', que ya está en true en producción.
+      sameSite: enProduccion ? 'none' : 'lax',
       path: REFRESH_COOKIE_PATH,
       maxAge: REFRESH_COOKIE_MAX_AGE_MS,
     });
