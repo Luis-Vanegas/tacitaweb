@@ -25,9 +25,13 @@ import { PrimaryColumn, ViewColumn, ViewEntity } from 'typeorm';
   `,
 })
 export class VPersonalVigente {
-  // PrimaryColumn: ver nota en proceso-detalle.view-entity.ts.
+  // PrimaryColumn: ver nota en proceso-detalle.view-entity.ts. Ademas necesita
+  // su propio `name` (no solo el de @ViewColumn): a diferencia de VProcesoDetalle
+  // (donde id=id), acá la propiedad y la columna real difieren (corteId vs
+  // corte_id), y sin el `name` acá TypeORM pierde el remapeo y arma la query
+  // buscando la columna literal "corteId" (QueryFailedError: no existe).
   @ViewColumn({ name: 'corte_id' })
-  @PrimaryColumn()
+  @PrimaryColumn({ name: 'corte_id' })
   corteId!: string;
 
   @ViewColumn({ name: 'tipo_personal_id' })

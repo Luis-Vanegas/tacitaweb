@@ -141,16 +141,7 @@ export function FrenteDetallePage() {
           py: { xs: 3, sm: 4 },
         }}
       >
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" flexWrap="wrap" gap={2}>
-          <Box>
-            <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-              {data?.nombre ?? (estado === 'loading' ? <Skeleton width={220} sx={{ bgcolor: 'rgba(255,255,255,0.3)' }} /> : slug)}
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.85 }}>
-              {data?.descripcion ?? 'Procesos de contratación y personal del frente'}
-            </Typography>
-          </Box>
-
+        <Stack direction="row" alignItems="flex-start" flexWrap="wrap" gap={2}>
           <Stack direction="row" spacing={0.5}>
             <Tooltip title="Volver">
               <IconButton
@@ -199,6 +190,15 @@ export function FrenteDetallePage() {
               </span>
             </Tooltip>
           </Stack>
+
+          <Box>
+            <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
+              {data?.nombre ?? (estado === 'loading' ? <Skeleton width={220} sx={{ bgcolor: 'rgba(255,255,255,0.3)' }} /> : slug)}
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.85 }}>
+              {data?.descripcion ?? 'Procesos de contratación y personal del frente'}
+            </Typography>
+          </Box>
         </Stack>
       </Box>
 
