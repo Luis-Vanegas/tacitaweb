@@ -30,7 +30,7 @@ const DEMO_PASSWORD = import.meta.env.VITE_DEMO_PASSWORD as string | undefined
 // Devuelve el usuario logueado si el auto-login demo está configurado y
 // funciona; null si no aplica (deja que el llamador caiga al comportamiento
 // normal, ej. mostrar /login).
-function* intentarAutoLoginDemo(): Generator<unknown, UsuarioSesion | null, unknown> {
+function* intentarAutoLoginDemo() {
   if (!DEMO_EMAIL || !DEMO_PASSWORD) return null
   try {
     const { data }: { data: TokensRespuesta } = yield call(http.post, endpoints.auth.login, {
