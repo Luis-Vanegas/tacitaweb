@@ -71,6 +71,16 @@ function agruparPorCategoriaYActividad(items: ProcesoDetalle[]): Map<string, Map
   return porCategoria
 }
 
+// Sin fecha de terminación al final (no hay plazo que vigilar); entre los que
+// sí tienen, el que vence más pronto primero (vencido = días negativos, va
+// antes que uno con margen todavía).
+function ordenarPorVencimiento(a: ProcesoDetalle, b: ProcesoDetalle): number {
+  if (a.diasRestantes === null && b.diasRestantes === null) return 0
+  if (a.diasRestantes === null) return 1
+  if (b.diasRestantes === null) return -1
+  return a.diasRestantes - b.diasRestantes
+}
+
 function rangoFechas(fechaInicio: string | null, fechaTerminacion: string | null): string {
   if (!fechaInicio && !fechaTerminacion) return 'Sin fechas'
   return `${formatearFecha(fechaInicio)} – ${formatearFecha(fechaTerminacion)}`
@@ -174,7 +184,13 @@ export function ProcesosTab({ slug, conteoPorEstado, filtroInicial }: ProcesosTa
     const porCategoria = agruparPorCategoriaYActividad(data?.data ?? [])
     const ordenCategoria = new Map(catalogos.categoriasActividad.map((c) => [c.nombre, c.orden]))
     return [...porCategoria.entries()]
-      .map<SeccionCategoria>(([categoria, actividades]) => [categoria, [...actividades.entries()]])
+      .map<SeccionCategoria>(([categoria, actividades]) => [
+        categoria,
+        [...actividades.entries()].map<GrupoActividad>(([actividad, procesos]) => [
+          actividad,
+          [...procesos].sort(ordenarPorVencimiento),
+        ]),
+      ])
       .sort(([a], [b]) => (ordenCategoria.get(a) ?? 99) - (ordenCategoria.get(b) ?? 99))
   }, [data, catalogos.categoriasActividad])
 
