@@ -22,7 +22,8 @@
     "migration:run": "npm run typeorm -- migration:run -d src/database/data-source.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
     "migration:generate": "npm run typeorm -- migration:generate -d src/database/data-source.ts",
-    "crear-admin": "ts-node src/database/scripts/crear-admin.ts"
+    "crear-admin": "ts-node src/database/scripts/crear-admin.ts",
+    "crear-usuario": "ts-node src/database/scripts/crear-admin.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

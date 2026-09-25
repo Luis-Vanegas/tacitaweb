@@ -68,12 +68,20 @@ async function main(): Promise<void> {
     output: process.stdout,
   });
 
-  const email = (await preguntar(rl, 'Email del admin: ')).trim().toLowerCase();
+  const email = (await preguntar(rl, 'Email: ')).trim().toLowerCase();
   const nombre = (await preguntar(rl, 'Nombre: ')).trim();
+  const rolInput = (await preguntar(rl, 'Rol (ADMIN/EDITOR/LECTOR) [LECTOR]: '))
+    .trim()
+    .toUpperCase();
   rl.close();
 
   if (!email || !nombre) {
     console.error('Email y nombre son obligatorios.');
+    process.exit(1);
+  }
+  const rol = rolInput === '' ? RolUsuario.LECTOR : (rolInput as RolUsuario);
+  if (!Object.values(RolUsuario).includes(rol)) {
+    console.error(`Rol inválido: "${rolInput}". Usá ADMIN, EDITOR o LECTOR.`);
     process.exit(1);
   }
 
@@ -109,11 +117,13 @@ async function main(): Promise<void> {
       email,
       nombre,
       passwordHash,
-      rol: RolUsuario.ADMIN,
+      rol,
       activo: true,
     });
     const guardado = await repositorio.save(usuario);
-    console.log(`Usuario ADMIN creado: ${guardado.email} (${guardado.id})`);
+    console.log(
+      `Usuario ${guardado.rol} creado: ${guardado.email} (${guardado.id})`,
+    );
   } finally {
     await dataSource.destroy();
   }
