@@ -160,7 +160,11 @@ export function TarjetaActividad({
                   </Typography>
                   <EstadoChip nombre={p.estado} color={p.estadoColor} esAlerta={p.esAlerta} />
                 </Stack>
-                <PlazoBar pctPlazo={p.pctPlazo} diasRestantes={p.diasRestantes} />
+                <PlazoBar
+                  pctPlazo={p.pctPlazo}
+                  diasRestantes={p.diasRestantes}
+                  terminado={p.fase === 'POSCONTRACTUAL'}
+                />
                 <Typography variant="caption" color="text.secondary">
                   {p.numeroContrato ? `Contrato ${p.numeroContrato}` : `Necesidad ${p.numeroNecesidad ?? '—'}`}
                   {/* La barra de plazo ya dice "Sin fecha" cuando no hay fechas: no repetirlo acá. */}

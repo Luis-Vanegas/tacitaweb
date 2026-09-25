@@ -34,4 +34,12 @@ describe('PlazoBar', () => {
     const barra = screen.getByRole('progressbar')
     expect(barra.className).toMatch(/colorError/)
   })
+
+  it('un proceso Terminado no se marca como vencido aunque diasRestantes sea negativo', () => {
+    renderConTema(<PlazoBar pctPlazo={100} diasRestantes={-18} terminado />)
+    expect(screen.getByText('Terminado')).toBeInTheDocument()
+    expect(screen.queryByText(/Vencido/)).not.toBeInTheDocument()
+    const barra = screen.getByRole('progressbar')
+    expect(barra.className).not.toMatch(/colorError/)
+  })
 })

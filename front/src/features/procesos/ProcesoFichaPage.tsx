@@ -208,7 +208,11 @@ export function ProcesoFichaPage() {
               <Paper variant="outlined" sx={{ p: 3 }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="flex-start" flexWrap="wrap" gap={2} sx={{ mb: 2 }}>
                   <EstadoChip nombre={ficha.estado} color={ficha.estadoColor} esAlerta={ficha.esAlerta} />
-                  <PlazoBar pctPlazo={ficha.pctPlazo} diasRestantes={ficha.diasRestantes} />
+                  <PlazoBar
+                    pctPlazo={ficha.pctPlazo}
+                    diasRestantes={ficha.diasRestantes}
+                    terminado={ficha.fase === 'POSCONTRACTUAL'}
+                  />
                 </Stack>
 
                 <Stack direction="row" flexWrap="wrap" sx={{ rowGap: 2 }}>
