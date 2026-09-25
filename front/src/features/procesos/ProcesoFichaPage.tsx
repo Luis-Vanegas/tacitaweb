@@ -140,8 +140,16 @@ export function ProcesoFichaPage() {
 
           <Stack direction="row" spacing={0.5} alignItems="center">
             <Tooltip title="Volver">
-              <IconButton aria-label="Volver a la pantalla anterior" onClick={() => navigate(-1)} sx={{ color: '#fff' }}>
-                <ArrowBackOutlinedIcon />
+              <IconButton
+                aria-label="Volver a la pantalla anterior"
+                onClick={() => navigate(-1)}
+                sx={{
+                  color: '#fff',
+                  backgroundColor: 'rgba(255,255,255,0.18)',
+                  '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' },
+                }}
+              >
+                <ArrowBackOutlinedIcon sx={{ fontSize: 30 }} />
               </IconButton>
             </Tooltip>
             <Tooltip title="Ir al menú">
