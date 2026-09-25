@@ -460,34 +460,27 @@ function TarjetaActividad({
           py: 0.75,
         }}
       >
-        <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1}>
-          <Stack direction="row" alignItems="center" spacing={0.75}>
+        <Stack direction="row" alignItems="flex-start" justifyContent="space-between" gap={1}>
+          <Stack direction="row" alignItems="center" spacing={0.75} sx={{ minWidth: 0 }}>
             {abierto ? <ExpandMoreIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
             <Typography
-              variant="caption"
-              sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: 'primary.main' }}
+              title={actividad}
+              sx={{
+                fontWeight: 700,
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}
             >
-              Actividad
+              {actividad}{' '}
+              <Typography component="span" variant="caption" color="text.secondary" sx={{ fontWeight: 400 }}>
+                ({procesos.length} {procesos.length === 1 ? 'proceso' : 'procesos'})
+              </Typography>
             </Typography>
           </Stack>
           <IconosSecop procesos={procesos} />
         </Stack>
-        <Typography
-          title={actividad}
-          sx={{
-            fontWeight: 700,
-            mt: 0.25,
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-          }}
-        >
-          {actividad}{' '}
-          <Typography component="span" variant="caption" color="text.secondary" sx={{ fontWeight: 400 }}>
-            ({procesos.length} {procesos.length === 1 ? 'proceso' : 'procesos'})
-          </Typography>
-        </Typography>
       </Box>
 
       {abierto && (
