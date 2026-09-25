@@ -206,32 +206,36 @@ export function FrenteDetallePage() {
           // nombres distintos, uno de los cuales ni siquiera filtraba.
           <Stack direction="row" spacing={2} flexWrap="wrap" sx={{ mb: 3, rowGap: 2 }}>
             <KpiCard etiqueta="Actividades" valor={data.totalActividades} icono={ListAltOutlinedIcon} />
-            <KpiCard
-              etiqueta="Total procesos"
-              valor={data.totalProcesos}
-              icono={AssignmentOutlinedIcon}
-              onClick={() => aplicarFiltroRapido(null)}
-            />
-            <KpiCard
-              etiqueta="Alertas"
-              valor={data.alertas}
-              icono={WarningAmberOutlinedIcon}
-              color="#DC3545"
-              onClick={() => aplicarFiltroRapido({ esAlerta: true })}
-            />
-            <KpiCard
-              etiqueta="Próximos a vencer (≤30 d)"
-              valor={data.proximosVencer}
-              icono={EventBusyOutlinedIcon}
-              color="#FD7E14"
-              onClick={() => aplicarFiltroRapido({ proximosVencer: true })}
-            />
-            {!FRENTES_SIN_KPI_PERSONAL.has(slug) && (
-              <KpiCard
-                etiqueta="Personal actual / pendiente"
-                valor={`${data.personalActual} / ${data.personalPendiente}`}
-                icono={GroupsOutlinedIcon}
-              />
+            {slug !== 'emvarias' && (
+              <>
+                <KpiCard
+                  etiqueta="Total procesos"
+                  valor={data.totalProcesos}
+                  icono={AssignmentOutlinedIcon}
+                  onClick={() => aplicarFiltroRapido(null)}
+                />
+                <KpiCard
+                  etiqueta="Alertas"
+                  valor={data.alertas}
+                  icono={WarningAmberOutlinedIcon}
+                  color="#DC3545"
+                  onClick={() => aplicarFiltroRapido({ esAlerta: true })}
+                />
+                <KpiCard
+                  etiqueta="Próximos a vencer (≤30 d)"
+                  valor={data.proximosVencer}
+                  icono={EventBusyOutlinedIcon}
+                  color="#FD7E14"
+                  onClick={() => aplicarFiltroRapido({ proximosVencer: true })}
+                />
+                {!FRENTES_SIN_KPI_PERSONAL.has(slug) && (
+                  <KpiCard
+                    etiqueta="Personal actual / pendiente"
+                    valor={`${data.personalActual} / ${data.personalPendiente}`}
+                    icono={GroupsOutlinedIcon}
+                  />
+                )}
+              </>
             )}
           </Stack>
         )}

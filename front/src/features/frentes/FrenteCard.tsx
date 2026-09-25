@@ -8,7 +8,6 @@ import Stack from '@mui/material/Stack'
 import Chip from '@mui/material/Chip'
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined'
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined'
-import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined'
 import type { ResumenFrente } from '@/shared/types'
 
 type IconosMui = typeof Icons
@@ -48,7 +47,7 @@ export function FrenteCard({ frente, onAbrir }: FrenteCardProps) {
             abrir()
           }
         }}
-        aria-label={`Abrir frente ${frente.nombre}: ${frente.totalProcesos} procesos, ${frente.alertas} alertas, ${frente.personalActual} personal`}
+        aria-label={`Abrir frente ${frente.nombre}: ${frente.totalProcesos} procesos, ${frente.alertas} alertas`}
         sx={{ height: '100%', p: 2.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}
       >
         <Box
@@ -71,7 +70,7 @@ export function FrenteCard({ frente, onAbrir }: FrenteCardProps) {
           {frente.nombre}
         </Typography>
 
-        <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 'auto', rowGap: 1 }}>
+        <Stack direction="row" spacing={1} sx={{ mt: 'auto' }}>
           <Chip
             size="small"
             icon={<AssignmentOutlinedIcon aria-hidden="true" />}
@@ -83,11 +82,6 @@ export function FrenteCard({ frente, onAbrir }: FrenteCardProps) {
             label={`${frente.alertas} alertas`}
             color={frente.alertas > 0 ? 'error' : 'default'}
             variant={frente.alertas > 0 ? 'filled' : 'outlined'}
-          />
-          <Chip
-            size="small"
-            icon={<GroupsOutlinedIcon aria-hidden="true" />}
-            label={`${frente.personalActual} personal`}
           />
         </Stack>
       </CardActionArea>

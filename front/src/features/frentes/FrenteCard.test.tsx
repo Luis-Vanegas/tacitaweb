@@ -35,7 +35,7 @@ describe('FrenteCard', () => {
     expect(screen.getByText('SIF')).toBeInTheDocument()
     expect(screen.getByText('34 procesos')).toBeInTheDocument()
     expect(screen.getByText('3 alertas')).toBeInTheDocument()
-    expect(screen.getByText('120 personal')).toBeInTheDocument()
+    expect(screen.queryByText(/personal/)).not.toBeInTheDocument()
   })
 
   it('llama a onAbrir con el slug al hacer clic', async () => {
