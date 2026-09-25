@@ -15,7 +15,13 @@ interface KpiCardProps {
 export function KpiCard({ etiqueta, valor, icono: Icono, color, onClick }: KpiCardProps) {
   return (
     <Card
-      sx={{ flex: '1 1 160px', minWidth: 160, cursor: onClick ? 'pointer' : 'default' }}
+      sx={{
+        flex: '1 1 160px',
+        minWidth: 160,
+        cursor: onClick ? 'pointer' : 'default',
+        transition: onClick ? 'box-shadow 120ms ease' : undefined,
+        '&:hover': onClick ? { boxShadow: 4 } : undefined,
+      }}
       onClick={onClick}
     >
       <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -41,7 +47,7 @@ export function KpiCard({ etiqueta, valor, icono: Icono, color, onClick }: KpiCa
           <Typography variant="h5" component="p" sx={{ lineHeight: 1.1 }}>
             {valor}
           </Typography>
-          <Typography variant="body2" color="text.secondary" noWrap>
+          <Typography variant="body2" color="text.secondary">
             {etiqueta}
           </Typography>
         </Box>

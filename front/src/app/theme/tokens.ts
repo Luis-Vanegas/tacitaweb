@@ -10,6 +10,7 @@ export const tokens = {
     cardBackground: '#FFFFFF',
     success: '#28A745',
     info: '#17A2B8',
+    error: '#DC3545',
     dark: '#343A40',
     // Texto claro para fondos navy: nunca gris claro (falla contraste AA sobre navy).
     onNavy: '#FFFFFF',

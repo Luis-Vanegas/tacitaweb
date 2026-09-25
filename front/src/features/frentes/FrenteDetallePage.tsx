@@ -39,6 +39,14 @@ type TabId = 'procesos' | 'personal'
 // un solo total (pedido explícito): se oculta esa tarjeta solo para ellos.
 const FRENTES_SIN_KPI_PERSONAL = new Set(['sif', 'medio-ambiente'])
 
+// Esqueleto de carga: la cantidad tiene que anticipar cuántas tarjetas KPI va
+// a mostrar este frente en particular, si no el layout salta al terminar de
+// cargar (ej. EMVARIAS muestra 1 sola tarjeta, no 6).
+function cantidadKpiEsperada(slug: string): number {
+  if (slug === 'emvarias') return 1
+  return FRENTES_SIN_KPI_PERSONAL.has(slug) ? 4 : 5
+}
+
 // Content-Disposition real que manda el backend (FrentesController.exportar):
 // `attachment; filename="<slug>-<fecha>.xlsx"`. Se parsea en vez de inventar
 // el nombre en el front, por si cambia el formato del lado del servidor.
@@ -201,7 +209,7 @@ export function FrenteDetallePage() {
 
         {estado === 'loading' && !data && (
           <Stack direction="row" spacing={2} flexWrap="wrap" sx={{ mb: 3 }}>
-            {Array.from({ length: 6 }).map((_, i) => (
+            {Array.from({ length: cantidadKpiEsperada(slug) }).map((_, i) => (
               <Skeleton key={i} variant="rounded" width={180} height={72} />
             ))}
           </Stack>

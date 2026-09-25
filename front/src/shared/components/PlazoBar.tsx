@@ -17,7 +17,17 @@ function textoDias(diasRestantes: number | null): string {
 
 // Barra de avance del plazo del contrato. Roja cuando ya venció
 // (dias_restantes < 0), sin importar el pct_plazo calculado por la API.
+// Sin fechas asignadas (precontractual): no hay plazo que mostrar, así que no
+// se dibuja una barra vacía al 0% que sugeriría "recién empezó".
 export function PlazoBar({ pctPlazo, diasRestantes }: PlazoBarProps) {
+  if (pctPlazo === null && diasRestantes === null) {
+    return (
+      <Typography variant="caption" color="text.secondary">
+        Sin fecha
+      </Typography>
+    )
+  }
+
   const vencido = diasRestantes !== null && diasRestantes < 0
   const valor = pctPlazo ?? 0
   const color = vencido ? 'error' : valor >= 85 ? 'warning' : 'primary'
@@ -40,7 +50,7 @@ export function PlazoBar({ pctPlazo, diasRestantes }: PlazoBarProps) {
         sx={{
           mt: 0.5,
           display: 'block',
-          color: vencido ? tokens.color.dark : 'text.secondary',
+          color: vencido ? tokens.color.error : 'text.secondary',
           fontWeight: vencido ? 700 : 400,
         }}
       >

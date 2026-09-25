@@ -17,6 +17,9 @@ export const theme = createTheme({
     info: {
       main: tokens.color.info,
     },
+    error: {
+      main: tokens.color.error,
+    },
     text: {
       primary: tokens.color.dark,
     },

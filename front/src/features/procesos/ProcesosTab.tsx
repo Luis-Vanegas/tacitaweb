@@ -31,6 +31,7 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { ErrorState } from '@/shared/components/ErrorState'
 import { EstadoChip } from '@/shared/components/EstadoChip'
 import { PlazoBar } from '@/shared/components/PlazoBar'
+import { formatearFecha } from '@/shared/utils/fecha'
 import type {
   ActualizarProcesoPayload,
   ConteoPorEstado,
@@ -70,9 +71,9 @@ function agruparPorCategoriaYActividad(items: ProcesoDetalle[]): Map<string, Map
   return porCategoria
 }
 
-function formatearFecha(fecha: string | null): string {
-  if (!fecha) return '—'
-  return fecha
+function rangoFechas(fechaInicio: string | null, fechaTerminacion: string | null): string {
+  if (!fechaInicio && !fechaTerminacion) return 'Sin fechas'
+  return `${formatearFecha(fechaInicio)} – ${formatearFecha(fechaTerminacion)}`
 }
 
 export function ProcesosTab({ slug, conteoPorEstado, filtroInicial }: ProcesosTabProps) {
@@ -182,7 +183,7 @@ export function ProcesosTab({ slug, conteoPorEstado, filtroInicial }: ProcesosTa
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mb: 3 }}>
         <TextField
           size="small"
-          placeholder="Buscar por contrato, necesidad, contratista o actividad"
+          placeholder={soloActividad ? 'Buscar por actividad' : 'Buscar por contrato, necesidad, contratista o actividad'}
           value={q}
           onChange={(e) => setQ(e.target.value)}
           sx={{ flex: 2, minWidth: 220 }}
@@ -197,61 +198,65 @@ export function ProcesosTab({ slug, conteoPorEstado, filtroInicial }: ProcesosTa
           }}
           aria-label="Buscar procesos"
         />
-        <TextField
-          size="small"
-          select
-          label="Fase"
-          value={fase}
-          onChange={(e) => setFase(e.target.value as FaseProceso | '')}
-          sx={{ minWidth: 160 }}
-        >
-          <MenuItem value="">Todas</MenuItem>
-          <MenuItem value="PRECONTRACTUAL">Precontractual</MenuItem>
-          <MenuItem value="CONTRACTUAL">Contractual</MenuItem>
-          <MenuItem value="POSCONTRACTUAL">Poscontractual</MenuItem>
-        </TextField>
-        <TextField
-          size="small"
-          select
-          label="Dependencia"
-          value={dependencia}
-          onChange={(e) => setDependencia(e.target.value ? Number(e.target.value) : '')}
-          sx={{ minWidth: 180 }}
-        >
-          <MenuItem value="">Todas</MenuItem>
-          {catalogos.dependencias.map((d) => (
-            <MenuItem key={d.id} value={d.id}>
-              {d.sigla ?? d.nombre}
-            </MenuItem>
-          ))}
-        </TextField>
-        <TextField
-          size="small"
-          select
-          label="Tipo"
-          value={tipo}
-          onChange={(e) => setTipo(e.target.value as TipoProceso | '')}
-          sx={{ minWidth: 160 }}
-        >
-          <MenuItem value="">Todos</MenuItem>
-          <MenuItem value="PRINCIPAL">Principal</MenuItem>
-          <MenuItem value="INTERVENTORIA">Interventoría</MenuItem>
-        </TextField>
-        <TextField
-          size="small"
-          select
-          label="Estado"
-          value={estadoIdFiltro}
-          onChange={(e) => setEstadoIdFiltro(e.target.value ? Number(e.target.value) : '')}
-          sx={{ minWidth: 190 }}
-        >
-          <MenuItem value="">Todos</MenuItem>
-          {conteoPorEstado.map((item) => (
-            <MenuItem key={item.estadoId} value={item.estadoId}>
-              {item.estado} ({item.total})
-            </MenuItem>
-          ))}
-        </TextField>
+        {!soloActividad && (
+          <>
+            <TextField
+              size="small"
+              select
+              label="Fase"
+              value={fase}
+              onChange={(e) => setFase(e.target.value as FaseProceso | '')}
+              sx={{ minWidth: 160 }}
+            >
+              <MenuItem value="">Todas</MenuItem>
+              <MenuItem value="PRECONTRACTUAL">Precontractual</MenuItem>
+              <MenuItem value="CONTRACTUAL">Contractual</MenuItem>
+              <MenuItem value="POSCONTRACTUAL">Poscontractual</MenuItem>
+            </TextField>
+            <TextField
+              size="small"
+              select
+              label="Dependencia"
+              value={dependencia}
+              onChange={(e) => setDependencia(e.target.value ? Number(e.target.value) : '')}
+              sx={{ minWidth: 180 }}
+            >
+              <MenuItem value="">Todas</MenuItem>
+              {catalogos.dependencias.map((d) => (
+                <MenuItem key={d.id} value={d.id}>
+                  {d.sigla ?? d.nombre}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              size="small"
+              select
+              label="Tipo"
+              value={tipo}
+              onChange={(e) => setTipo(e.target.value as TipoProceso | '')}
+              sx={{ minWidth: 160 }}
+            >
+              <MenuItem value="">Todos</MenuItem>
+              <MenuItem value="PRINCIPAL">Principal</MenuItem>
+              <MenuItem value="INTERVENTORIA">Interventoría</MenuItem>
+            </TextField>
+            <TextField
+              size="small"
+              select
+              label="Estado"
+              value={estadoIdFiltro}
+              onChange={(e) => setEstadoIdFiltro(e.target.value ? Number(e.target.value) : '')}
+              sx={{ minWidth: 190 }}
+            >
+              <MenuItem value="">Todos</MenuItem>
+              {conteoPorEstado.map((item) => (
+                <MenuItem key={item.estadoId} value={item.estadoId}>
+                  {item.estado} ({item.total})
+                </MenuItem>
+              ))}
+            </TextField>
+          </>
+        )}
         {esAlerta && (
           <Chip label="Alertas" color="error" onDelete={() => setEsAlerta(false)} sx={{ alignSelf: 'center' }} />
         )}
@@ -262,18 +267,20 @@ export function ProcesosTab({ slug, conteoPorEstado, filtroInicial }: ProcesosTa
             onDelete={() => setProximosVencer(false)}
           />
         )}
-        <Tooltip title={estadoIdInicial === null ? 'Cargando catálogo de estados…' : ''}>
-          <span style={{ marginLeft: 'auto' }}>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              disabled={estadoIdInicial === null}
-              onClick={() => setDialogoCrearAbierto(true)}
-            >
-              Nuevo proceso
-            </Button>
-          </span>
-        </Tooltip>
+        {!soloActividad && (
+          <Tooltip title={estadoIdInicial === null ? 'Cargando catálogo de estados…' : ''}>
+            <span style={{ marginLeft: 'auto' }}>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                disabled={estadoIdInicial === null}
+                onClick={() => setDialogoCrearAbierto(true)}
+              >
+                Nuevo proceso
+              </Button>
+            </span>
+          </Tooltip>
+        )}
       </Stack>
 
       {estado === 'loading' && (
@@ -385,13 +392,27 @@ function TarjetaActividad({
   if (soloActividad) {
     // Desglose de sub-actividades (ej. "Limpieza urbana"), guardado en la
     // observación del proceso — no es dato de contrato, es la única
-    // información que puede acompañar a la actividad acá.
+    // información que puede acompañar a la actividad acá. Mismo lenguaje
+    // visual (acento celeste + chevron) que las tarjetas de actividad
+    // normales, para que se note de un vistazo cuál tiene más para ver y
+    // cuál es solo el nombre.
     const desglose = procesos.find((p) => p.observacion)?.observacion
     return (
       <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
         <Box
           onClick={desglose ? onToggle : undefined}
-          sx={{ px: 1.25, py: 1, cursor: desglose ? 'pointer' : 'default' }}
+          sx={{
+            px: 1.25,
+            py: 1,
+            cursor: desglose ? 'pointer' : 'default',
+            ...(desglose && {
+              backgroundColor: 'rgba(0,171,238,0.08)',
+              borderLeft: '3px solid',
+              borderLeftColor: 'primary.main',
+              transition: 'background-color 120ms ease',
+              '&:hover': { backgroundColor: 'rgba(0,171,238,0.14)' },
+            }),
+          }}
         >
           <Stack direction="row" alignItems="center" spacing={0.75}>
             {desglose && (abierto ? <ExpandMoreIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />)}
@@ -410,7 +431,7 @@ function TarjetaActividad({
           </Stack>
         </Box>
         {desglose && abierto && (
-          <Typography variant="body2" color="text.secondary" sx={{ px: 1.25, pb: 1.25 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ px: 1.25, pb: 1.25, pt: 1 }}>
             {desglose}
           </Typography>
         )}
@@ -470,25 +491,33 @@ function TarjetaActividad({
       </Box>
 
       {abierto && (
-        <Stack spacing={1.5} sx={{ p: 1.5 }}>
+        <Stack spacing={2} sx={{ p: 1.5 }}>
           {procesos.map((p) => (
-            <Card key={p.id} variant="outlined" onClick={() => onAbrir(p.id)} sx={{ cursor: 'pointer' }}>
+            <Card
+              key={p.id}
+              variant="outlined"
+              onClick={() => onAbrir(p.id)}
+              sx={{
+                cursor: 'pointer',
+                transition: 'background-color 120ms ease, border-color 120ms ease',
+                '&:hover': { backgroundColor: 'rgba(0,171,238,0.05)', borderColor: 'primary.main' },
+              }}
+            >
               <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>
                     {p.contratista ?? 'Sin contratista'}
                   </Typography>
                   <EstadoChip nombre={p.estado} color={p.estadoColor} esAlerta={p.esAlerta} />
                 </Stack>
+                <PlazoBar pctPlazo={p.pctPlazo} diasRestantes={p.diasRestantes} />
                 <Typography variant="caption" color="text.secondary">
                   {p.numeroContrato ? `Contrato ${p.numeroContrato}` : `Necesidad ${p.numeroNecesidad ?? '—'}`}
+                  {/* La barra de plazo ya dice "Sin fecha" cuando no hay fechas: no repetirlo acá. */}
+                  {(p.fechaInicio || p.fechaTerminacion) && ` · ${rangoFechas(p.fechaInicio, p.fechaTerminacion)}`}
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {formatearFecha(p.fechaInicio)} – {formatearFecha(p.fechaTerminacion)}
-                </Typography>
-                <PlazoBar pctPlazo={p.pctPlazo} diasRestantes={p.diasRestantes} />
                 {p.ultimaNota && (
-                  <Typography variant="caption" color="text.secondary" noWrap>
+                  <Typography variant="caption" color="text.secondary" noWrap title={p.ultimaNota}>
                     {p.ultimaNota}
                   </Typography>
                 )}

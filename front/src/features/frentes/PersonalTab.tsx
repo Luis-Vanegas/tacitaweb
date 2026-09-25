@@ -19,15 +19,12 @@ import { useAppDispatch, useAppSelector } from '@/shared/hooks/redux'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { ErrorState } from '@/shared/components/ErrorState'
 import { KpiCard } from '@/shared/components/KpiCard'
+import { formatearFecha } from '@/shared/utils/fecha'
 import type { PersonalOperador } from '@/shared/types'
 import { personalRequest } from './personalSlice'
 
 interface PersonalTabProps {
   slug: string
-}
-
-function formatearFecha(fecha: string | null): string {
-  return fecha ?? '—'
 }
 
 // Agrupa operadores por corte (personal_corte.id) para listarlos junto al

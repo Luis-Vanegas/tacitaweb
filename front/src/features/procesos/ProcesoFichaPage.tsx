@@ -29,6 +29,7 @@ import { EstadoChip } from '@/shared/components/EstadoChip'
 import { PlazoBar } from '@/shared/components/PlazoBar'
 import { PdfDownloadButton } from '@/shared/components/pdf/PdfDownloadButton'
 import { ProcesoPdfDocument } from '@/shared/components/pdf/ProcesoPdfDocument'
+import { formatearFecha } from '@/shared/utils/fecha'
 import { catalogosRequest } from '@/features/catalogos/catalogosSlice'
 import { limpiarProcesoFicha, procesoFichaRequest } from './procesoFichaSlice'
 import {
@@ -215,8 +216,8 @@ export function ProcesoFichaPage() {
                   <Dato etiqueta="Número de necesidad" valor={dato(ficha.numeroNecesidad)} />
                   <Dato etiqueta="Tipo" valor={ficha.tipo === 'INTERVENTORIA' ? 'Interventoría' : 'Principal'} />
                   <Dato etiqueta="Contratista" valor={dato(ficha.contratista)} />
-                  <Dato etiqueta="Fecha de inicio" valor={dato(ficha.fechaInicio)} />
-                  <Dato etiqueta="Fecha de terminación" valor={dato(ficha.fechaTerminacion)} />
+                  <Dato etiqueta="Fecha de inicio" valor={formatearFecha(ficha.fechaInicio)} />
+                  <Dato etiqueta="Fecha de terminación" valor={formatearFecha(ficha.fechaTerminacion)} />
                   <Dato etiqueta="Dependencia" valor={dato(ficha.dependencia)} />
                   <Dato etiqueta="Proyecto" valor={dato(ficha.proyecto)} />
                   <Dato etiqueta="Actividad" valor={dato(ficha.actividad)} />
