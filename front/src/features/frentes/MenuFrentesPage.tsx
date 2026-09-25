@@ -13,6 +13,7 @@ import { ErrorState } from '@/shared/components/ErrorState'
 import { logoutRequest } from '@/features/auth/authSlice'
 import { frentesListarRequest } from './frentesSlice'
 import { FrenteCard } from './FrenteCard'
+import { GeneralCard } from './GeneralCard'
 
 export function MenuFrentesPage() {
   const dispatch = useAppDispatch()
@@ -109,13 +110,18 @@ export function MenuFrentesPage() {
         )}
 
         {estado === 'succeeded' && items.length > 0 && (
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 2.5 }}>
-            {items.map((frente) => (
-              <Box key={frente.id} sx={cardBasis}>
-                <FrenteCard frente={frente} onAbrir={(slug) => navigate(`/frentes/${slug}`)} />
-              </Box>
-            ))}
-          </Box>
+          <>
+            <Box sx={{ mb: 2.5 }}>
+              <GeneralCard frentes={items} onAbrir={() => navigate('/general')} />
+            </Box>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 2.5 }}>
+              {items.map((frente) => (
+                <Box key={frente.id} sx={cardBasis}>
+                  <FrenteCard frente={frente} onAbrir={(slug) => navigate(`/frentes/${slug}`)} />
+                </Box>
+              ))}
+            </Box>
+          </>
         )}
       </Box>
     </Box>

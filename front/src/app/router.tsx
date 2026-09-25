@@ -3,6 +3,7 @@ import { LoginPage } from '@/features/auth/LoginPage'
 import { ProtectedRoute } from '@/features/auth/ProtectedRoute'
 import { MenuFrentesPage } from '@/features/frentes/MenuFrentesPage'
 import { FrenteDetallePage } from '@/features/frentes/FrenteDetallePage'
+import { GeneralPage } from '@/features/general/GeneralPage'
 import { ProcesoFichaPage } from '@/features/procesos/ProcesoFichaPage'
 import { AdminLayout } from '@/features/admin/AdminLayout'
 import { UsuariosPage } from '@/features/admin/UsuariosPage'
@@ -15,6 +16,14 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <MenuFrentesPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/general',
+    element: (
+      <ProtectedRoute>
+        <GeneralPage />
       </ProtectedRoute>
     ),
   },
