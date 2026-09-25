@@ -16,10 +16,12 @@ interface IntentosLogin {
 }
 
 const VENTANA_MS = 15 * 60 * 1000;
-// 30 en vez de 5: con el auto-login de demo (front/features/auth/authSaga.ts)
-// cada recarga de página sin cookie de refresh dispara un intento de login
-// más, y 5 se agotaba con unas pocas recargas normales.
-const MAX_INTENTOS = 30;
+// ponytail: 500 en vez de 5 como parche de emergencia para la demo de hoy.
+// La cookie de refresh no está persistiendo entre recargas (probablemente
+// falta NODE_ENV=production en el backend, ver setRefreshCookie más abajo),
+// así que CADA recarga dispara un login nuevo y agota cualquier límite bajo.
+// Bajar esto de nuevo (a ~15) apenas se arregle la persistencia de sesión.
+const MAX_INTENTOS = 500;
 
 @Injectable()
 export class LoginRateLimitGuard implements CanActivate {
