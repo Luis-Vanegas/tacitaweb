@@ -21,6 +21,7 @@ import { Proyecto } from '@/database/entities/proyecto.entity';
 import { PersonalOperador } from '@/database/entities/personal-operador.entity';
 import { Seguimiento } from '@/database/entities/seguimiento.entity';
 import { Frente } from '@/database/entities/frente.entity';
+import { Compromiso } from '@/database/entities/compromiso.entity';
 import { VResumenFrente } from '@/database/entities/views/resumen-frente.view-entity';
 import { VProcesoDetalle } from '@/database/entities/views/proceso-detalle.view-entity';
 import { VPersonalVigente } from '@/database/entities/views/personal-vigente.view-entity';
@@ -64,6 +65,7 @@ export function databaseConfig(
       PersonalOperador,
       Seguimiento,
       Frente,
+      Compromiso,
       VResumenFrente,
       VProcesoDetalle,
       VPersonalVigente,
