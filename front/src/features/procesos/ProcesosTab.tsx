@@ -226,7 +226,7 @@ export function ProcesosTab({ slug, conteoPorEstado, filtroInicial }: ProcesosTa
         )}
         {proximosVencer && (
           <Chip
-            label="Próximos a vencer"
+            label="Próximo a terminar"
             sx={{ alignSelf: 'center', backgroundColor: '#FD7E14', color: '#fff' }}
             onDelete={() => setProximosVencer(false)}
           />

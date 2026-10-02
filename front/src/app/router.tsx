@@ -2,6 +2,7 @@ import { Navigate, createBrowserRouter } from 'react-router-dom'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { ProtectedRoute } from '@/features/auth/ProtectedRoute'
 import { MenuFrentesPage } from '@/features/frentes/MenuFrentesPage'
+import { MapaFrentesPage } from '@/features/frentes/MapaFrentesPage'
 import { FrenteDetallePage } from '@/features/frentes/FrenteDetallePage'
 import { GeneralPage } from '@/features/general/GeneralPage'
 import { ProcesoFichaPage } from '@/features/procesos/ProcesoFichaPage'
@@ -13,6 +14,15 @@ export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   {
     path: '/',
+    element: (
+      <ProtectedRoute>
+        <MapaFrentesPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    // ponytail: menú de tarjetas anterior, oculto (sin links) mientras se valida el mapa.
+    path: '/frentes',
     element: (
       <ProtectedRoute>
         <MenuFrentesPage />

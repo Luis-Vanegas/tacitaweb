@@ -4,6 +4,7 @@ import usuariosReducer from '@/features/admin/usuariosSlice'
 import vinculosReducer from '@/features/admin/vinculosSlice'
 import authReducer, { sesionCerrada } from '@/features/auth/authSlice'
 import catalogosReducer from '@/features/catalogos/catalogosSlice'
+import compromisosReducer from '@/features/compromisos/compromisosSlice'
 import generalReducer from '@/features/general/generalSlice'
 import frentesReducer from '@/features/frentes/frentesSlice'
 import personalReducer from '@/features/frentes/personalSlice'
@@ -19,6 +20,7 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
     catalogos: catalogosReducer,
+    compromisos: compromisosReducer,
     general: generalReducer,
     frentes: frentesReducer,
     procesos: procesosReducer,

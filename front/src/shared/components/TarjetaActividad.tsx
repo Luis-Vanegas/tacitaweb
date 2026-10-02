@@ -12,6 +12,7 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import { EstadoChip } from './EstadoChip'
 import { PlazoBar } from './PlazoBar'
+import { AvanceContrato } from './AvanceContrato'
 import { formatearFecha } from '@/shared/utils/fecha'
 import type { ProcesoDetalle } from '@/shared/types'
 
@@ -165,6 +166,7 @@ export function TarjetaActividad({
                   diasRestantes={p.diasRestantes}
                   terminado={p.fase === 'POSCONTRACTUAL'}
                 />
+                <AvanceContrato proceso={p} />
                 <Typography variant="caption" color="text.secondary">
                   {p.numeroContrato ? `Contrato ${p.numeroContrato}` : `Necesidad ${p.numeroNecesidad ?? '—'}`}
                   {/* La barra de plazo ya dice "Sin fecha" cuando no hay fechas: no repetirlo acá. */}

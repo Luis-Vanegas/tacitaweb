@@ -36,17 +36,11 @@ import { ProcesosTab } from '@/features/procesos/ProcesosTab'
 
 type TabId = 'procesos' | 'personal'
 
-// SIF y Medio Ambiente suman personal de tipos que no deberían acumularse en
-// un solo total (pedido explícito): en vez de la tarjeta combinada, se
-// muestra una tarjeta por tipo de personal (ver personalVigente más abajo).
-const FRENTES_SIN_KPI_PERSONAL = new Set(['sif', 'medio-ambiente'])
-
 // Esqueleto de carga: la cantidad tiene que anticipar cuántas tarjetas KPI va
 // a mostrar este frente en particular, si no el layout salta al terminar de
 // cargar (ej. EMVARIAS muestra 1 sola tarjeta, no 6).
 function cantidadKpiEsperada(slug: string): number {
-  if (slug === 'emvarias') return 1
-  return FRENTES_SIN_KPI_PERSONAL.has(slug) ? 4 : 5
+  return slug === 'emvarias' ? 1 : 5
 }
 
 // Content-Disposition real que manda el backend (FrentesController.exportar):
@@ -72,9 +66,9 @@ export function FrenteDetallePage() {
   const [filtroRapidoKey, setFiltroRapidoKey] = useState(0)
 
   const { estado, error, data } = useAppSelector((s) => s.frentes.detalle)
-  // Solo se usa para las tarjetas KPI por tipo de SIF/Medio Ambiente (ver
-  // FRENTES_SIN_KPI_PERSONAL): el resto de los frentes muestra el total
-  // combinado que ya viene en `data`, sin pedir esto de más.
+  // El personal NO se acumula entre tipos (pedido explícito): una tarjeta por
+  // tipo con su actual y pendiente, aunque varios tipos sean de la misma
+  // dependencia (ej. Seguridad: Espacio Público + Gestores Operativos).
   const personalVigente = useAppSelector((s) => s.personal.data?.vigente ?? [])
 
   const tabActual = (searchParams.get('tab') as TabId | null) ?? 'procesos'
@@ -91,9 +85,7 @@ export function FrenteDetallePage() {
   }, [dispatch, slug])
 
   useEffect(() => {
-    if (FRENTES_SIN_KPI_PERSONAL.has(slug)) {
-      dispatch(personalRequest(slug))
-    }
+    dispatch(personalRequest(slug))
   }, [dispatch, slug])
 
   function cambiarTab(_: SyntheticEvent, valor: TabId) {
@@ -250,28 +242,20 @@ export function FrenteDetallePage() {
                   onClick={() => aplicarFiltroRapido({ esAlerta: true })}
                 />
                 <KpiCard
-                  etiqueta="Próximos a vencer (≤30 d)"
+                  etiqueta="Próximo a terminar"
                   valor={data.proximosVencer}
                   icono={EventBusyOutlinedIcon}
                   color="#FD7E14"
                   onClick={() => aplicarFiltroRapido({ proximosVencer: true })}
                 />
-                {FRENTES_SIN_KPI_PERSONAL.has(slug)
-                  ? personalVigente.map((v) => (
-                      <KpiCard
-                        key={v.tipoPersonalId}
-                        etiqueta={`Personal · ${v.tipoPersonal}`}
-                        valor={`${v.actual} / ${v.pendiente}`}
-                        icono={GroupsOutlinedIcon}
-                      />
-                    ))
-                  : (
-                      <KpiCard
-                        etiqueta="Personal actual / pendiente"
-                        valor={`${data.personalActual} / ${data.personalPendiente}`}
-                        icono={GroupsOutlinedIcon}
-                      />
-                    )}
+                {personalVigente.map((v) => (
+                  <KpiCard
+                    key={v.tipoPersonalId}
+                    etiqueta={`${v.tipoPersonal} · actual / pendiente`}
+                    valor={`${v.actual} / ${v.pendiente}`}
+                    icono={GroupsOutlinedIcon}
+                  />
+                ))}
               </>
             )}
           </Stack>

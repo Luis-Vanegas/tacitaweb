@@ -163,7 +163,6 @@ export function PersonalTab({ slug }: PersonalTabProps) {
                   <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ rowGap: 1, mb: 1 }}>
                     <KpiCard etiqueta="Actual" valor={v.actual} />
                     <KpiCard etiqueta="Pendiente" valor={v.pendiente} color="#FD7E14" />
-                    <KpiCard etiqueta="Meta" valor={v.meta} />
                   </Stack>
                   <Typography variant="caption" color="text.secondary">
                     Fecha final: {formatearFecha(v.fechaFinal)}

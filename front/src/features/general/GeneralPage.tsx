@@ -31,9 +31,11 @@ import { catalogosRequest } from '@/features/catalogos/catalogosSlice'
 import type { ProcesoDetalle } from '@/shared/types'
 import { generalRequest } from './generalSlice'
 
-// Misma definición que "proximos_vencer" en v_resumen_frente / FrentesService.listarProcesos.
+// Misma definición que "proximos_vencer" en v_resumen_frente / FrentesService.listarProcesos:
+// por estado, no por días (los ALERTA_* cuentan como alertas, no acá).
+const ESTADOS_PROXIMO_TERMINAR = new Set(['PROXIMO_TERMINAR_DIRECTO', 'PROXIMO_TERMINAR_SELECCION'])
 function esProximoAVencer(p: ProcesoDetalle): boolean {
-  return p.fase === 'CONTRACTUAL' && p.diasRestantes !== null && p.diasRestantes >= 0 && p.diasRestantes <= 30
+  return ESTADOS_PROXIMO_TERMINAR.has(p.estadoCodigo)
 }
 
 function coincideBusqueda(p: ProcesoDetalle, q: string): boolean {
@@ -204,7 +206,7 @@ export function GeneralPage() {
                 onClick={() => aplicarFiltroRapido('alertas')}
               />
               <KpiCard
-                etiqueta="Próximos a vencer (≤30 d)"
+                etiqueta="Próximo a terminar"
                 valor={totales.proximosVencer}
                 icono={EventBusyOutlinedIcon}
                 color="#FD7E14"
@@ -250,7 +252,7 @@ export function GeneralPage() {
               )}
               {soloProximos && (
                 <Chip
-                  label="Próximos a vencer"
+                  label="Próximo a terminar"
                   sx={{ alignSelf: 'center', backgroundColor: '#FD7E14', color: '#fff' }}
                   onDelete={() => setSoloProximos(false)}
                 />

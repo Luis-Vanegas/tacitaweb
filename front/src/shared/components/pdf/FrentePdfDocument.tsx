@@ -124,7 +124,7 @@ export function FrentePdfDocument({ frente }: FrentePdfDocumentProps) {
             </View>
             <View style={styles.kpiTarjeta}>
               <Text style={styles.kpiValor}>{frente.proximosVencer}</Text>
-              <Text style={styles.kpiLabel}>Próximos a vencer</Text>
+              <Text style={styles.kpiLabel}>Próximo a terminar</Text>
             </View>
             <View style={styles.kpiTarjeta}>
               <Text style={styles.kpiValor}>{frente.personalActual}</Text>

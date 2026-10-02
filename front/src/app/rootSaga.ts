@@ -3,6 +3,7 @@ import { usuariosWatcherSaga } from '@/features/admin/usuariosSaga'
 import { vinculosWatcherSaga } from '@/features/admin/vinculosSaga'
 import { authWatcherSaga } from '@/features/auth/authSaga'
 import { catalogosWatcherSaga } from '@/features/catalogos/catalogosSaga'
+import { compromisosWatcherSaga } from '@/features/compromisos/compromisosSaga'
 import { generalWatcherSaga } from '@/features/general/generalSaga'
 import { frentesWatcherSaga } from '@/features/frentes/frentesSaga'
 import { personalWatcherSaga } from '@/features/frentes/personalSaga'
@@ -14,6 +15,7 @@ export function* rootSaga() {
   yield all([
     authWatcherSaga(),
     catalogosWatcherSaga(),
+    compromisosWatcherSaga(),
     generalWatcherSaga(),
     frentesWatcherSaga(),
     procesosWatcherSaga(),

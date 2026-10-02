@@ -8,6 +8,7 @@ export const endpoints = {
     me: '/auth/me',
   },
   catalogos: '/catalogos',
+  compromisos: '/compromisos',
   frentes: {
     listar: '/frentes',
     detalle: (slug: string) => `/frentes/${slug}`,

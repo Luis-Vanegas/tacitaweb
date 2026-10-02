@@ -36,6 +36,32 @@ export interface ProcesoDetalle {
   updatedAt: string
   categoriaActividadId: number
   categoriaActividad: string
+  valorContrato: number | null
+  ejecucionFinanciera: number | null
+  rutas: RutaProceso[]
+}
+
+// Paso actual de una ruta del proceso (core.proceso_ruta, 012). orden/total
+// alimentan la barra de avance; "No aplica" = la ruta no viene en la lista.
+export interface RutaProceso {
+  codigo: 'TRASLADO' | 'INCORPORACION' | 'DIRECTO' | 'SELECCION'
+  ruta: string
+  paso: string
+  orden: number
+  total: number
+  responsable: string | null
+  termino: string | null
+}
+
+// GET /compromisos (core.compromiso, 012).
+export interface Compromiso {
+  id: number
+  descripcion: string
+  estado: 'PENDIENTE' | 'EN_GESTION' | 'CUMPLIDO'
+  responsable: string | null
+  fechaRegistro: string | null
+  fechaCumplimiento: string | null
+  avance: string | null
 }
 
 // Query params de GET /frentes/:slug/procesos
