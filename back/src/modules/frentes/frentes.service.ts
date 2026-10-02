@@ -141,10 +141,11 @@ export class FrentesService {
       qb.andWhere('v.esAlerta = true');
     }
     if (filtro.proximosVencer) {
-      // Misma definición que "proximos_vencer" en v_resumen_frente.
-      qb.andWhere(
-        "v.fase = 'CONTRACTUAL' and v.diasRestantes between 0 and 30",
-      );
+      // Misma definición que "proximos_vencer" en v_resumen_frente (por
+      // estado, no por días — ver 012_rutas_compromisos_estados.sql).
+      qb.andWhere('v.estadoCodigo in (:...proximos)', {
+        proximos: ['PROXIMO_TERMINAR_DIRECTO', 'PROXIMO_TERMINAR_SELECCION'],
+      });
     }
     if (filtro.q) {
       qb.andWhere(

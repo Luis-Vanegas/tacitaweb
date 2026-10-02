@@ -47,7 +47,10 @@ import { FaseProceso } from '../estado-proceso.entity';
       ult.nota        as ultima_nota,
       p.updated_at,
       ca.id           as categoria_actividad_id,
-      ca.nombre       as categoria_actividad
+      ca.nombre       as categoria_actividad,
+      p.valor_contrato,
+      p.ejecucion_financiera,
+      coalesce(rt.rutas, '[]'::jsonb) as rutas
     from core.proceso_contratacion p
     join core.actividad      a  on a.id  = p.actividad_id
     join core.dependencia    d  on d.id  = a.dependencia_id
@@ -62,6 +65,21 @@ import { FaseProceso } from '../estado-proceso.entity';
       order by s.fecha desc, s.id desc
       limit 1
     ) ult on true
+    left join lateral (
+      select jsonb_agg(jsonb_build_object(
+               'codigo',      r.codigo,
+               'ruta',        r.nombre,
+               'paso',        rp.nombre,
+               'orden',       rp.orden,
+               'total',       (select count(*) from core.ruta_paso x where x.ruta_id = r.id),
+               'responsable', rp.responsable,
+               'termino',     rp.termino
+             ) order by r.orden) as rutas
+      from core.proceso_ruta prt
+      join core.ruta      r  on r.id  = prt.ruta_id
+      join core.ruta_paso rp on rp.id = prt.paso_id
+      where prt.proceso_id = p.id
+    ) rt on true
   `,
 })
 export class VProcesoDetalle {
@@ -158,4 +176,33 @@ export class VProcesoDetalle {
 
   @ViewColumn({ name: 'categoria_actividad' })
   categoriaActividad!: string;
+
+  // numeric llega como string desde pg: se pasa a number (pesos, sin riesgo
+  // de precisión hasta ~9e15, muy por encima de cualquier contrato).
+  @ViewColumn({ name: 'valor_contrato', transformer: numeroONull() })
+  valorContrato!: number | null;
+
+  @ViewColumn({ name: 'ejecucion_financiera', transformer: numeroONull() })
+  ejecucionFinanciera!: number | null;
+
+  // Paso actual de cada ruta que aplica al proceso (012_rutas_compromisos_estados.sql).
+  @ViewColumn()
+  rutas!: RutaProceso[];
+}
+
+export interface RutaProceso {
+  codigo: 'TRASLADO' | 'INCORPORACION' | 'DIRECTO' | 'SELECCION';
+  ruta: string;
+  paso: string;
+  orden: number;
+  total: number;
+  responsable: string | null;
+  termino: string | null;
+}
+
+function numeroONull() {
+  return {
+    to: (v: number | null) => v,
+    from: (v: string | null) => (v === null ? null : Number(v)),
+  };
 }

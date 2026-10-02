@@ -36,6 +36,8 @@ ESTADOS = {  # texto del Excel (normalizado) -> codigo en core.estado_proceso
     "ejecución": "EJECUCION",
     "próximo a terminar directo": "PROXIMO_TERMINAR_DIRECTO",
     "próximo a terminar selección": "PROXIMO_TERMINAR_SELECCION",
+    "alerta próximo a terminar": "ALERTA_PROXIMO_TERMINAR",  # 012
+    "alerta terminado": "ALERTA_TERMINADO",  # 012
     "terminado": "TERMINADO",
 }
 

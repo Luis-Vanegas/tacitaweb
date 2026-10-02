@@ -17,6 +17,7 @@ import { FrentesModule } from './modules/frentes/frentes.module';
 import { ProcesosModule } from './modules/procesos/procesos.module';
 import { SeguimientoModule } from './modules/seguimiento/seguimiento.module';
 import { PersonalModule } from './modules/personal/personal.module';
+import { CompromisosModule } from './modules/compromisos/compromisos.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { PersonalModule } from './modules/personal/personal.module';
     ProcesosModule,
     SeguimientoModule,
     PersonalModule,
+    CompromisosModule,
   ],
   controllers: [AppController],
   providers: [

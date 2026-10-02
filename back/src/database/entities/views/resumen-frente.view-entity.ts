@@ -32,8 +32,8 @@ import { PrimaryColumn, ViewColumn, ViewEntity } from 'typeorm';
         count(*) filter (where v.fase = 'CONTRACTUAL')               as en_ejecucion,
         count(*) filter (where v.fase = 'POSCONTRACTUAL')            as terminados,
         count(*) filter (where v.es_alerta)                          as alertas,
-        count(*) filter (where v.fase = 'CONTRACTUAL'
-                           and v.dias_restantes between 0 and 30)    as proximos_vencer
+        count(*) filter (where v.estado_codigo in
+                         ('PROXIMO_TERMINAR_DIRECTO', 'PROXIMO_TERMINAR_SELECCION')) as proximos_vencer
       from core.frente_proceso fp
       join core.v_proceso_detalle v on v.id = fp.proceso_id
       where fp.frente_id = f.id
