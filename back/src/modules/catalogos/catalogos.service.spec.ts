@@ -6,6 +6,8 @@ describe('CatalogosService', () => {
   let proyectoRepo: { find: jest.Mock };
   let contratistaRepo: { find: jest.Mock };
   let categoriaActividadRepo: { find: jest.Mock };
+  let tipoPersonalRepo: { find: jest.Mock };
+  let actividadRepo: { find: jest.Mock };
   let service: CatalogosService;
 
   beforeEach(() => {
@@ -16,6 +18,21 @@ describe('CatalogosService', () => {
     categoriaActividadRepo = {
       find: jest.fn().mockResolvedValue(['categoria']),
     };
+    tipoPersonalRepo = {
+      find: jest
+        .fn()
+        .mockResolvedValue([{ id: 1, nombre: 'Gestores', activo: true }]),
+    };
+    actividadRepo = {
+      find: jest.fn().mockResolvedValue([
+        {
+          id: 7,
+          nombre: 'Aseo',
+          dependenciaId: 2,
+          dependencia: { id: 2, nombre: 'Secretaría de Seguridad' },
+        },
+      ]),
+    };
 
     service = new CatalogosService(
       estadoRepo as any,
@@ -23,10 +40,12 @@ describe('CatalogosService', () => {
       proyectoRepo as any,
       contratistaRepo as any,
       categoriaActividadRepo as any,
+      tipoPersonalRepo as any,
+      actividadRepo as any,
     );
   });
 
-  it('consulta los 5 repos la primera vez', async () => {
+  it('consulta los repos la primera vez y aplana tipos y actividades', async () => {
     const resultado = await service.obtener();
 
     expect(resultado).toEqual({
@@ -35,6 +54,15 @@ describe('CatalogosService', () => {
       proyectos: ['proyecto'],
       contratistas: ['contratista'],
       categoriasActividad: ['categoria'],
+      tiposPersonal: [{ id: 1, nombre: 'Gestores' }],
+      actividades: [
+        {
+          id: 7,
+          nombre: 'Aseo',
+          dependenciaId: 2,
+          dependencia: 'Secretaría de Seguridad',
+        },
+      ],
     });
     expect(estadoRepo.find).toHaveBeenCalledTimes(1);
   });
@@ -56,5 +84,13 @@ describe('CatalogosService', () => {
 
     expect(estadoRepo.find).toHaveBeenCalledTimes(2);
     jest.useRealTimers();
+  });
+
+  it('invalidar() fuerza una nueva consulta aunque el TTL siga vigente', async () => {
+    await service.obtener();
+    service.invalidar();
+    await service.obtener();
+
+    expect(estadoRepo.find).toHaveBeenCalledTimes(2);
   });
 });

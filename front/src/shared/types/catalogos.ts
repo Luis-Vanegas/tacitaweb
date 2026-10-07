@@ -38,10 +38,26 @@ export interface CategoriaActividad {
   orden: number
 }
 
+// Formas planas de CatalogosService (TipoPersonalCatalogo, ActividadCatalogo):
+// no la entidad completa, solo lo que necesitan los selects.
+export interface TipoPersonalCatalogo {
+  id: number
+  nombre: string
+}
+
+export interface ActividadCatalogo {
+  id: number
+  nombre: string
+  dependenciaId: number
+  dependencia: string
+}
+
 export interface CatalogosRespuesta {
   estados: EstadoProceso[]
   dependencias: Dependencia[]
   proyectos: Proyecto[]
   contratistas: Contratista[]
   categoriasActividad: CategoriaActividad[]
+  tiposPersonal: TipoPersonalCatalogo[]
+  actividades: ActividadCatalogo[]
 }

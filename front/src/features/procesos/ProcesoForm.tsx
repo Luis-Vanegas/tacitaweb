@@ -1,13 +1,21 @@
+import { useMemo } from 'react'
 import Box from '@mui/material/Box'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import MenuItem from '@mui/material/MenuItem'
 import Alert from '@mui/material/Alert'
+import Autocomplete from '@mui/material/Autocomplete'
 import { Controller, useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 import dayjs from 'dayjs'
-import type { ActualizarProcesoPayload, Contratista, ProcesoDetalle, TipoProceso } from '@/shared/types'
+import type {
+  ActividadCatalogo,
+  ActualizarProcesoPayload,
+  Contratista,
+  ProcesoDetalle,
+  TipoProceso,
+} from '@/shared/types'
 
 // Mismos CHECK que la BD (back/src/database/migrations/sql/001_core_schema.sql,
 // core.proceso_contratacion): numero_contrato / numero_necesidad solo dígitos,
@@ -95,6 +103,9 @@ interface ProcesoFormProps {
   formId: string
   valoresIniciales?: ProcesoDetalle
   contratistas: Contratista[]
+  // Opcional con default [] para que montajes sin catálogo cargado (o
+  // estados precargados en tests) no rompan el Autocomplete.
+  actividades?: ActividadCatalogo[]
   error?: string | null
   onGuardar: (datos: ActualizarProcesoPayload) => void
 }
@@ -104,13 +115,19 @@ interface ProcesoFormProps {
 // vinculados: van por CambiarEstadoDialog y por los endpoints de vínculo
 // frente↔proceso respectivamente, a propósito (ver prompt de Fase 5).
 //
-// Gap conocido: no existe un catálogo de actividades expuesto por el front
-// (GET /catalogos no lo trae, y no hay GET /actividades en el backend), así
-// que actividadId queda como TextField numérico simple en vez de un selector.
-// Lo mismo para procesoSupervisadoId: no hay un endpoint para buscar/listar
-// procesos candidatos a "contrato vigilado", así que también es un TextField
-// numérico. Ninguno de los dos endpoints se inventó.
-export function ProcesoForm({ formId, valoresIniciales, contratistas, error, onGuardar }: ProcesoFormProps) {
+// La actividad se elige del catálogo (GET /catalogos → actividades), agrupada
+// por dependencia porque hay nombres de actividad repetidos entre dependencias.
+// Gap conocido: no hay un endpoint para buscar/listar procesos candidatos a
+// "contrato vigilado", así que procesoSupervisadoId sigue siendo un TextField
+// numérico. No se inventó ese endpoint.
+export function ProcesoForm({
+  formId,
+  valoresIniciales,
+  contratistas,
+  actividades = [],
+  error,
+  onGuardar,
+}: ProcesoFormProps) {
   const {
     control,
     handleSubmit,
@@ -122,6 +139,15 @@ export function ProcesoForm({ formId, valoresIniciales, contratistas, error, onG
   })
 
   const tipo = watch('tipo')
+
+  // groupBy de Autocomplete exige las opciones ordenadas por el grupo.
+  const actividadesOrdenadas = useMemo(
+    () =>
+      [...actividades].sort(
+        (a, b) => a.dependencia.localeCompare(b.dependencia, 'es') || a.nombre.localeCompare(b.nombre, 'es'),
+      ),
+    [actividades],
+  )
 
   function enviar(valores: ProcesoFormValues) {
     onGuardar({
@@ -150,14 +176,32 @@ export function ProcesoForm({ formId, valoresIniciales, contratistas, error, onG
           name="actividadId"
           control={control}
           render={({ field }) => (
-            <TextField
-              {...field}
-              label="Actividad (id)"
-              type="number"
-              required
+            <Autocomplete
+              options={actividadesOrdenadas}
+              value={actividadesOrdenadas.find((a) => String(a.id) === field.value) ?? null}
+              onChange={(_e, opcion) => field.onChange(opcion ? String(opcion.id) : '')}
+              onBlur={field.onBlur}
+              groupBy={(a) => a.dependencia}
+              getOptionLabel={(a) => `${a.dependencia} — ${a.nombre}`}
+              isOptionEqualToValue={(a, b) => a.id === b.id}
+              // Dentro del grupo basta el nombre; el input muestra "Dependencia — Actividad".
+              renderOption={({ key, ...props }, a) => (
+                <li key={key} {...props}>
+                  {a.nombre}
+                </li>
+              )}
+              noOptionsText="Sin actividades"
               fullWidth
-              error={!!errors.actividadId}
-              helperText={errors.actividadId?.message ?? 'Sin catálogo de actividades en el front: id numérico.'}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  inputRef={field.ref}
+                  label="Dependencia — Actividad"
+                  required
+                  error={!!errors.actividadId}
+                  helperText={errors.actividadId?.message}
+                />
+              )}
             />
           )}
         />

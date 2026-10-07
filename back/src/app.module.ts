@@ -18,6 +18,7 @@ import { ProcesosModule } from './modules/procesos/procesos.module';
 import { SeguimientoModule } from './modules/seguimiento/seguimiento.module';
 import { PersonalModule } from './modules/personal/personal.module';
 import { CompromisosModule } from './modules/compromisos/compromisos.module';
+import { ImportacionModule } from './modules/importacion/importacion.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { CompromisosModule } from './modules/compromisos/compromisos.module';
     SeguimientoModule,
     PersonalModule,
     CompromisosModule,
+    ImportacionModule,
   ],
   controllers: [AppController],
   providers: [

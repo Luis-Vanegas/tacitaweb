@@ -53,15 +53,36 @@ export interface RutaProceso {
   termino: string | null
 }
 
+export type EstadoCompromiso = 'PENDIENTE' | 'EN_GESTION' | 'CUMPLIDO'
+
 // GET /compromisos (core.compromiso, 012).
 export interface Compromiso {
   id: number
   descripcion: string
-  estado: 'PENDIENTE' | 'EN_GESTION' | 'CUMPLIDO'
+  estado: EstadoCompromiso
   responsable: string | null
   fechaRegistro: string | null
   fechaCumplimiento: string | null
   avance: string | null
+}
+
+// Body de POST /compromisos (CrearCompromisoDto). Sin estado, la BD pone PENDIENTE.
+export interface CrearCompromisoPayload {
+  descripcion: string
+  estado?: EstadoCompromiso
+  responsable?: string | null
+  fechaRegistro?: string | null
+  fechaCumplimiento?: string | null
+  avance?: string | null
+}
+
+// Body de PATCH /compromisos/:id (ActualizarCompromisoDto): todo opcional;
+// null vacía un campo, salvo descripcion/estado que son NOT NULL.
+export type ActualizarCompromisoPayload = Partial<CrearCompromisoPayload>
+
+export interface ActualizarCompromisoConId {
+  id: number
+  payload: ActualizarCompromisoPayload
 }
 
 // Query params de GET /frentes/:slug/procesos

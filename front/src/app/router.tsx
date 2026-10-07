@@ -5,10 +5,12 @@ import { MenuFrentesPage } from '@/features/frentes/MenuFrentesPage'
 import { MapaFrentesPage } from '@/features/frentes/MapaFrentesPage'
 import { FrenteDetallePage } from '@/features/frentes/FrenteDetallePage'
 import { GeneralPage } from '@/features/general/GeneralPage'
+import { PersonalGeneralPage } from '@/features/personal/PersonalGeneralPage'
 import { ProcesoFichaPage } from '@/features/procesos/ProcesoFichaPage'
 import { AdminLayout } from '@/features/admin/AdminLayout'
 import { UsuariosPage } from '@/features/admin/UsuariosPage'
 import { VinculosPage } from '@/features/admin/VinculosPage'
+import { CargaDatosPage } from '@/features/carga/CargaDatosPage'
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -38,6 +40,14 @@ export const router = createBrowserRouter([
     ),
   },
   {
+    path: '/personal',
+    element: (
+      <ProtectedRoute>
+        <PersonalGeneralPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
     path: '/frentes/:slug',
     element: (
       <ProtectedRoute>
@@ -50,6 +60,14 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <ProcesoFichaPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/carga',
+    element: (
+      <ProtectedRoute rolesPermitidos={['ADMIN', 'EDITOR']}>
+        <CargaDatosPage />
       </ProtectedRoute>
     ),
   },

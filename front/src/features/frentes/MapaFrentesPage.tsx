@@ -14,8 +14,10 @@ import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import CloseIcon from '@mui/icons-material/Close'
+import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined'
 import LogoutIcon from '@mui/icons-material/Logout'
 import OpenInFullIcon from '@mui/icons-material/OpenInFull'
+import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined'
 import ViewListOutlinedIcon from '@mui/icons-material/ViewListOutlined'
 import { tokens } from '@/app/theme/tokens'
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/redux'
@@ -117,6 +119,26 @@ export function MapaFrentesPage() {
         >
           Vista general
         </Button>
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<GroupsOutlinedIcon />}
+          onClick={() => navigate('/personal')}
+          sx={{ color: tokens.color.onNavy, borderColor: 'rgba(255,255,255,0.4)' }}
+        >
+          Personal
+        </Button>
+        {(usuario?.rol === 'ADMIN' || usuario?.rol === 'EDITOR') && (
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<UploadFileOutlinedIcon />}
+            onClick={() => navigate('/carga')}
+            sx={{ color: tokens.color.onNavy, borderColor: 'rgba(255,255,255,0.4)' }}
+          >
+            Cargar datos
+          </Button>
+        )}
         {usuario && (
           <>
             <Typography variant="body2" sx={{ color: tokens.color.onNavyMuted, display: { xs: 'none', sm: 'block' } }}>

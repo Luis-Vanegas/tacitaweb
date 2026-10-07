@@ -3,7 +3,8 @@ import { PersonalService } from './personal.service';
 import { RolUsuario } from '@/database/entities/usuario.entity';
 
 describe('PersonalService', () => {
-  let corteRepo: { findOne: jest.Mock };
+  let corteRepo: { findOne: jest.Mock; find: jest.Mock };
+  let vigenteRepo: { find: jest.Mock };
   let frenteTipoPersonalRepo: { find: jest.Mock };
   let usuarioFrenteRepo: { exist: jest.Mock };
   let manager: { create: jest.Mock; save: jest.Mock; update: jest.Mock };
@@ -23,7 +24,8 @@ describe('PersonalService', () => {
   const editor = { id: 'editor-1', email: 'e@e.com', rol: RolUsuario.EDITOR };
 
   beforeEach(() => {
-    corteRepo = { findOne: jest.fn() };
+    corteRepo = { findOne: jest.fn(), find: jest.fn().mockResolvedValue([]) };
+    vigenteRepo = { find: jest.fn().mockResolvedValue([]) };
     frenteTipoPersonalRepo = { find: jest.fn().mockResolvedValue([]) };
     usuarioFrenteRepo = { exist: jest.fn() };
     manager = {
@@ -47,6 +49,7 @@ describe('PersonalService', () => {
       frenteTipoPersonalRepo as any,
       usuarioFrenteRepo as any,
       dataSource as any,
+      vigenteRepo as any,
     );
   });
 
@@ -101,6 +104,67 @@ describe('PersonalService', () => {
         ['app.usuario_id', 'admin-1'],
       );
       expect(queryRunner.commitTransaction).toHaveBeenCalled();
+    });
+  });
+
+  describe('listarGeneral', () => {
+    const frenteA = { slug: 'a', nombre: 'A', color: '#111', activo: true };
+    const frenteB = { slug: 'b', nombre: 'B', color: '#222', activo: true };
+    const frenteInactivo = {
+      slug: 'x',
+      nombre: 'X',
+      color: '#333',
+      activo: false,
+    };
+
+    it('un tipo ligado a dos frentes aparece una vez y los totales no cuentan doble', async () => {
+      vigenteRepo.find.mockResolvedValueOnce([
+        { corteId: '1', tipoPersonalId: 10, actual: 5, pendiente: 3, meta: 8 },
+        {
+          corteId: '2',
+          tipoPersonalId: 20,
+          actual: 4,
+          pendiente: null,
+          meta: null,
+        },
+      ]);
+      frenteTipoPersonalRepo.find.mockResolvedValueOnce([
+        { tipoPersonalId: 10, frente: frenteA },
+        { tipoPersonalId: 10, frente: frenteB },
+        { tipoPersonalId: 20, frente: frenteInactivo },
+      ]);
+      corteRepo.find.mockResolvedValueOnce([{ id: '1' }, { id: '2' }]);
+
+      const resultado = await service.listarGeneral();
+
+      expect(resultado.items).toHaveLength(2);
+      expect(resultado.items[0].frentes).toEqual([
+        { slug: 'a', nombre: 'A', color: '#111' },
+        { slug: 'b', nombre: 'B', color: '#222' },
+      ]);
+      // Frentes inactivos se ocultan igual que en v_resumen_frente.
+      expect(resultado.items[1].frentes).toEqual([]);
+      expect(resultado.totales).toEqual({ actual: 9, pendiente: 3, meta: 8 });
+      expect(resultado.historico).toEqual([{ id: '1' }, { id: '2' }]);
+    });
+
+    it('un pendiente negativo suma 0 (greatest(pendiente, 0))', async () => {
+      vigenteRepo.find.mockResolvedValueOnce([
+        {
+          corteId: '1',
+          tipoPersonalId: 10,
+          actual: 12,
+          pendiente: -2,
+          meta: 10,
+        },
+        { corteId: '2', tipoPersonalId: 20, actual: 1, pendiente: 4, meta: 5 },
+      ]);
+
+      const resultado = await service.listarGeneral();
+
+      expect(resultado.totales).toEqual({ actual: 13, pendiente: 4, meta: 15 });
+      // El �tem conserva el valor de la vista; solo el total se recorta.
+      expect(resultado.items[0].pendiente).toBe(-2);
     });
   });
 });

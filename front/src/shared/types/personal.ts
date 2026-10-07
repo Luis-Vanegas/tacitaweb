@@ -49,3 +49,39 @@ export interface PersonalFrenteRespuesta {
   historico: PersonalCorte[]
   operadores: PersonalOperador[]
 }
+
+// Frente al que está ligado un tipo de personal (GET /personal).
+export interface FrenteResumido {
+  slug: string
+  nombre: string
+  color: string
+}
+
+export type PersonalGeneralItem = VPersonalVigente & {
+  frentes: FrenteResumido[]
+}
+
+// GET /personal (PersonalService.obtenerGeneral): una fila por tipo de
+// personal. Los totales vienen ya deduplicados del backend (un tipo ligado a
+// varios frentes cuenta una vez): el front no los recalcula.
+export interface PersonalGeneralRespuesta {
+  items: PersonalGeneralItem[]
+  totales: { actual: number; pendiente: number; meta: number }
+  historico: PersonalCorte[]
+}
+
+// Body de POST /personal/cortes (CrearCortePersonalDto). La unicidad es
+// (tipoPersonalId, vigencia): si ya existe, se edita con PATCH en vez de crear.
+export interface CrearCortePayload {
+  tipoPersonalId: number
+  vigencia: number
+  actual: number
+  pendiente?: number
+  meta?: number
+  fechaFinal?: string
+  observaciones?: string
+}
+
+// Body de PATCH /personal/cortes/:id (ActualizarCortePersonalDto): la clave
+// (tipo, vigencia) no se cambia, el resto es opcional.
+export type ActualizarCortePayload = Partial<Omit<CrearCortePayload, 'tipoPersonalId' | 'vigencia'>>

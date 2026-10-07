@@ -331,6 +331,7 @@ export function ProcesoFichaPage() {
               formId="proceso-form-editar"
               valoresIniciales={ficha}
               contratistas={catalogos.contratistas}
+              actividades={catalogos.actividades}
               error={mutaciones.actualizar.error}
               onGuardar={(datos) => dispatch(actualizarProcesoRequest({ id, payload: datos }))}
             />
