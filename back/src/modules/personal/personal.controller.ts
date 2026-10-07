@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Param,
   Patch,
   Post,
@@ -15,13 +16,20 @@ import { PersonalService } from './personal.service';
 import { ActualizarCortePersonalDto } from './dto/actualizar-corte-personal.dto';
 import { CrearCortePersonalDto } from './dto/crear-corte-personal.dto';
 
-@UseGuards(RolesGuard)
-@Roles(RolUsuario.ADMIN, RolUsuario.EDITOR)
+// Lectura para cualquier usuario autenticado (JwtAuthGuard es global); las
+// escrituras exigen ADMIN/EDITOR por método.
 @Controller('personal')
 export class PersonalController {
   constructor(private readonly personalService: PersonalService) {}
 
+  @Get()
+  listarGeneral() {
+    return this.personalService.listarGeneral();
+  }
+
   @Patch('cortes/:id')
+  @UseGuards(RolesGuard)
+  @Roles(RolUsuario.ADMIN, RolUsuario.EDITOR)
   actualizarCorte(
     @Param('id') id: string,
     @Body() dto: ActualizarCortePersonalDto,
@@ -31,6 +39,8 @@ export class PersonalController {
   }
 
   @Post('cortes')
+  @UseGuards(RolesGuard)
+  @Roles(RolUsuario.ADMIN, RolUsuario.EDITOR)
   crearCorte(
     @Body() dto: CrearCortePersonalDto,
     @UsuarioActual() actor: UsuarioAutenticado,
