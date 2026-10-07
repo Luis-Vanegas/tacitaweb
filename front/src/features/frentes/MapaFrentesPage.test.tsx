@@ -94,4 +94,9 @@ describe('MapaFrentesPage', () => {
     await user.click(actividad)
     expect(await screen.findByText('Constructora Uno')).toBeInTheDocument()
   })
+
+  it('muestra el acceso a la vista general de personal para cualquier rol', () => {
+    renderPagina()
+    expect(screen.getByRole('button', { name: 'Personal' })).toBeInTheDocument()
+  })
 })

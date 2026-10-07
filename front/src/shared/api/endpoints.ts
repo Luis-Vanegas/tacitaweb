@@ -8,7 +8,12 @@ export const endpoints = {
     me: '/auth/me',
   },
   catalogos: '/catalogos',
-  compromisos: '/compromisos',
+  compromisos: {
+    listar: '/compromisos',
+    crear: '/compromisos',
+    actualizar: (id: number) => `/compromisos/${id}`,
+    eliminar: (id: number) => `/compromisos/${id}`,
+  },
   frentes: {
     listar: '/frentes',
     detalle: (slug: string) => `/frentes/${slug}`,
@@ -25,6 +30,7 @@ export const endpoints = {
     cambiarEstado: (id: string) => `/procesos/${id}/estado`,
   },
   personal: {
+    general: '/personal',
     crearCorte: '/personal/cortes',
     actualizarCorte: (id: string) => `/personal/cortes/${id}`,
   },

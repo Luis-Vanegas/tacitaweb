@@ -14,6 +14,7 @@ import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import CloseIcon from '@mui/icons-material/Close'
+import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined'
 import LogoutIcon from '@mui/icons-material/Logout'
 import OpenInFullIcon from '@mui/icons-material/OpenInFull'
 import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined'
@@ -117,6 +118,15 @@ export function MapaFrentesPage() {
           sx={{ color: tokens.color.onNavy, borderColor: 'rgba(255,255,255,0.4)' }}
         >
           Vista general
+        </Button>
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<GroupsOutlinedIcon />}
+          onClick={() => navigate('/personal')}
+          sx={{ color: tokens.color.onNavy, borderColor: 'rgba(255,255,255,0.4)' }}
+        >
+          Personal
         </Button>
         {(usuario?.rol === 'ADMIN' || usuario?.rol === 'EDITOR') && (
           <Button

@@ -7,6 +7,7 @@ import { compromisosWatcherSaga } from '@/features/compromisos/compromisosSaga'
 import { generalWatcherSaga } from '@/features/general/generalSaga'
 import { frentesWatcherSaga } from '@/features/frentes/frentesSaga'
 import { personalWatcherSaga } from '@/features/frentes/personalSaga'
+import { personalGeneralWatcherSaga } from '@/features/personal/personalGeneralSaga'
 import { procesoFichaWatcherSaga } from '@/features/procesos/procesoFichaSaga'
 import { procesoMutacionesWatcherSaga } from '@/features/procesos/procesoMutacionesSaga'
 import { procesosWatcherSaga } from '@/features/procesos/procesosSaga'
@@ -22,6 +23,7 @@ export function* rootSaga() {
     procesoFichaWatcherSaga(),
     procesoMutacionesWatcherSaga(),
     personalWatcherSaga(),
+    personalGeneralWatcherSaga(),
     usuariosWatcherSaga(),
     vinculosWatcherSaga(),
   ])

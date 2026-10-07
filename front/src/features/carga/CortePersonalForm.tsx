@@ -17,9 +17,14 @@ import { http } from '@/shared/api/http'
 import { endpoints } from '@/shared/api/endpoints'
 import type { ErrorApi } from '@/shared/types'
 import { personalRequest, limpiarPersonal } from '@/features/frentes/personalSlice'
-import { buscarCorte, payloadCorte, type CorteFormValues } from './corteExistente'
-
-const ENTERO = /^[0-9]+$/
+import {
+  buscarCorte,
+  camposCorte,
+  payloadCorte,
+  valoresDesdeCorte,
+  VALORES_CORTE_VACIOS,
+  type CorteFormValues,
+} from './corteExistente'
 
 interface FormValues extends CorteFormValues {
   tipoPersonalId: string
@@ -38,14 +43,8 @@ const schema: yup.ObjectSchema<FormValues> = yup.object({
       const n = Number(v)
       return Number.isInteger(n) && n >= 2020 && n <= 2100
     }),
-  actual: yup.string().default('').required('Obligatorio.').matches(ENTERO, 'Entero ≥ 0.'),
-  pendiente: yup.string().default('').matches(ENTERO, { message: 'Entero ≥ 0.', excludeEmptyString: true }),
-  meta: yup.string().default('').matches(ENTERO, { message: 'Entero ≥ 0.', excludeEmptyString: true }),
-  fechaFinal: yup.string().default(''),
-  observaciones: yup.string().default(''),
+  ...camposCorte,
 })
-
-const VALORES_VACIOS: CorteFormValues = { actual: '', pendiente: '', meta: '', fechaFinal: '', observaciones: '' }
 
 // Formulario de un corte de personal. El frente solo sirve para cargar sus
 // cortes (GET /frentes/:slug/personal, mismo saga que PersonalTab): no hay un
@@ -71,7 +70,7 @@ export function CortePersonalForm() {
     formState: { errors },
   } = useForm<FormValues>({
     resolver: yupResolver(schema),
-    defaultValues: { tipoPersonalId: '', vigencia: String(dayjs().year()), ...VALORES_VACIOS },
+    defaultValues: { tipoPersonalId: '', vigencia: String(dayjs().year()), ...VALORES_CORTE_VACIOS },
   })
 
   // El slice de personal es compartido con FrenteDetallePage: se limpia al
@@ -98,15 +97,7 @@ export function CortePersonalForm() {
     reset({
       tipoPersonalId: tipo,
       vigencia: anio,
-      ...(corte
-        ? {
-            actual: String(corte.actual),
-            pendiente: corte.pendiente === null ? '' : String(corte.pendiente),
-            meta: corte.meta === null ? '' : String(corte.meta),
-            fechaFinal: corte.fechaFinal ? dayjs(corte.fechaFinal).format('YYYY-MM-DD') : '',
-            observaciones: corte.observaciones ?? '',
-          }
-        : VALORES_VACIOS),
+      ...(corte ? valoresDesdeCorte(corte) : VALORES_CORTE_VACIOS),
     })
   }, [corte, getValues, reset])
 

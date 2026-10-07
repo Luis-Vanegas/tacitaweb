@@ -8,6 +8,7 @@ import compromisosReducer from '@/features/compromisos/compromisosSlice'
 import generalReducer from '@/features/general/generalSlice'
 import frentesReducer from '@/features/frentes/frentesSlice'
 import personalReducer from '@/features/frentes/personalSlice'
+import personalGeneralReducer from '@/features/personal/personalGeneralSlice'
 import procesoFichaReducer from '@/features/procesos/procesoFichaSlice'
 import procesoMutacionesReducer from '@/features/procesos/procesoMutacionesSlice'
 import procesosReducer from '@/features/procesos/procesosSlice'
@@ -27,6 +28,7 @@ export const store = configureStore({
     procesoFicha: procesoFichaReducer,
     procesoMutaciones: procesoMutacionesReducer,
     personal: personalReducer,
+    personalGeneral: personalGeneralReducer,
     usuarios: usuariosReducer,
     vinculos: vinculosReducer,
   },

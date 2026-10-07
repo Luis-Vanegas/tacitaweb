@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import { act, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
 import { combineReducers, configureStore } from '@reduxjs/toolkit'
 import { ThemeProvider } from '@mui/material/styles'
 import { theme } from '@/app/theme/theme'
-import type { PersonalFrenteRespuesta } from '@/shared/types'
+import authReducer from '@/features/auth/authSlice'
+import type { PersonalFrenteRespuesta, UsuarioSesion } from '@/shared/types'
 import personalReducer, { personalFailure } from './personalSlice'
 import { PersonalTab } from './PersonalTab'
 
@@ -18,7 +20,7 @@ vi.mock('echarts-for-react', () => ({
   ),
 }))
 
-const rootReducer = combineReducers({ personal: personalReducer })
+const rootReducer = combineReducers({ auth: authReducer, personal: personalReducer })
 
 function crearStore(preloadedState: Partial<ReturnType<typeof rootReducer>>) {
   return configureStore({
@@ -147,6 +149,38 @@ describe('PersonalTab', () => {
       { name: 'Actual', data: [8] },
       { name: 'Pendiente', data: [2] },
     ])
+  })
+
+  it('LECTOR no ve el botón de editar en las tarjetas', () => {
+    renderTab({ personal: { estado: 'succeeded', error: null, data: datosBase } })
+    expect(screen.queryByRole('button', { name: 'Editar Operarios' })).not.toBeInTheDocument()
+  })
+
+  it('EDITOR edita una tarjeta precargando la fila cruda del histórico', async () => {
+    const editor: UsuarioSesion = { id: 'u1', email: 'e@x.co', nombre: 'Editora', rol: 'EDITOR' }
+    renderTab({
+      auth: {
+        estado: 'succeeded',
+        bootstrapCompletado: true,
+        usuario: editor,
+        error: null,
+      },
+      personal: {
+        estado: 'succeeded',
+        error: null,
+        // La vista dice pendiente 2, pero lo guardado (histórico) es null.
+        data: {
+          ...datosBase,
+          historico: [{ ...datosBase.historico[0], pendiente: null }, datosBase.historico[1]],
+        },
+      },
+    })
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Editar Operarios' }))
+
+    expect(await screen.findByText('Editar Operarios · vigencia 2026')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Actual/)).toHaveValue(8)
+    expect(screen.getByLabelText(/^Pendiente/)).toHaveValue(null)
   })
 
   it('no fuerza el comparativo cuando solo hay una vigencia', () => {

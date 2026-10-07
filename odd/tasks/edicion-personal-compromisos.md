@@ -18,7 +18,7 @@
 ## Tareas
 - [x] T1 Backend: compromisos CRUD (service + DTOs + specs) y `GET /personal`
       global con frentes por tipo.
-- [ ] T2 Frontend: `EditarCorteDialog` en PersonalTab, edición de compromisos
+- [x] T2 Frontend: `EditarCorteDialog` en PersonalTab, edición de compromisos
       en `CompromisosPanel`, página `/personal` + botón en el header.
 
 ## Rutas por tarea
@@ -34,3 +34,6 @@
 - T1: `npm run lint` limpio, `npm test` 19 suites / 99 tests OK, `tsc` OK.
   `GET /personal` → `{items (VPersonalVigente + frentes[]), totales, historico}`;
   compromisos POST/PATCH (ADMIN/EDITOR), DELETE (ADMIN, 204).
+- T2: `npm run lint` limpio, `npx tsc -b` OK, `npx vitest run` 15 archivos / 58 tests OK.
+  No verificado en navegador (backend no levanta en local). Pendiente: no se
+  puede vaciar pendiente/meta de un corte (payloadCorte omite vacíos).
