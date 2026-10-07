@@ -49,6 +49,8 @@ export function ProcesosTab({ slug, conteoPorEstado, filtroInicial }: ProcesosTa
   const { estado, error, data } = useAppSelector((s) => s.procesos)
   const catalogos = useAppSelector((s) => s.catalogos)
   const crearProceso = useAppSelector((s) => s.procesoMutaciones.crear)
+  const rol = useAppSelector((s) => s.auth.usuario?.rol)
+  const puedeCargarDatos = rol === 'ADMIN' || rol === 'EDITOR'
 
   const [q, setQ] = useState('')
   const [fase, setFase] = useState<FaseProceso | ''>('')
@@ -231,9 +233,16 @@ export function ProcesosTab({ slug, conteoPorEstado, filtroInicial }: ProcesosTa
             onDelete={() => setProximosVencer(false)}
           />
         )}
+        {!soloActividad && puedeCargarDatos && (
+          // Acceso a /carga desde el frente: ahí están el formulario completo
+          // (con estado y frentes) y la importación masiva por Excel.
+          <Button variant="text" onClick={() => navigate('/carga')} sx={{ ml: 'auto' }}>
+            Carga masiva
+          </Button>
+        )}
         {!soloActividad && (
           <Tooltip title={estadoIdInicial === null ? 'Cargando catálogo de estados…' : ''}>
-            <span style={{ marginLeft: 'auto' }}>
+            <span style={{ marginLeft: puedeCargarDatos ? undefined : 'auto' }}>
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
@@ -321,6 +330,7 @@ export function ProcesosTab({ slug, conteoPorEstado, filtroInicial }: ProcesosTa
           <ProcesoForm
             formId="proceso-form-crear"
             contratistas={catalogos.contratistas}
+            actividades={catalogos.actividades}
             error={crearProceso.error}
             onGuardar={crearProcesoNuevo}
           />

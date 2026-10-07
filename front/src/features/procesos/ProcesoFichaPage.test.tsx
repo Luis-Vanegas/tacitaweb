@@ -144,6 +144,8 @@ describe('ProcesoFichaPage', () => {
         proyectos: [],
         contratistas: [],
         categoriasActividad: [],
+        tiposPersonal: [],
+        actividades: [],
       },
     })
 

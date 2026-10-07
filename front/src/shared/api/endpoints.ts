@@ -24,6 +24,14 @@ export const endpoints = {
     actualizar: (id: string) => `/procesos/${id}`,
     cambiarEstado: (id: string) => `/procesos/${id}/estado`,
   },
+  personal: {
+    crearCorte: '/personal/cortes',
+    actualizarCorte: (id: string) => `/personal/cortes/${id}`,
+  },
+  importacion: {
+    plantilla: (tipo: string) => `/importacion/plantilla/${tipo}`,
+    importar: (tipo: string) => `/importacion/${tipo}`,
+  },
   seguimiento: {
     listar: (procesoId: string) => `/procesos/${procesoId}/seguimiento`,
     crear: (procesoId: string) => `/procesos/${procesoId}/seguimiento`,

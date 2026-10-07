@@ -23,9 +23,9 @@ sola vez con un script.
 - Plantillas generadas por el backend (exceljs), columnas alineadas al export.
 
 ## Tareas
-- [ ] T1 Backend: catálogos exponen `tiposPersonal` y `actividades`; módulo
+- [x] T1 Backend: catálogos exponen `tiposPersonal` y `actividades`; módulo
       `importacion` (plantilla + import procesos/personal con dryRun) + specs.
-- [ ] T2 Frontend: página `/carga` con pestañas Procesos/Personal, formularios
+- [x] T2 Frontend: página `/carga` con pestañas Procesos/Personal, formularios
       (proceso con selects de catálogo, corte de personal) e importador Excel
       con vista previa + tests.
 
@@ -39,3 +39,17 @@ sola vez con un script.
 
 ## Progreso
 - Rama `feat/carga-datos-excel` creada.
+- T1 commit `bd86e36`. `npm run lint` limpio; `npm test` 18 suites / 91 tests OK.
+  Endpoints: `GET /catalogos` (+tiposPersonal, actividades),
+  `GET /importacion/plantilla/:tipo`, `POST /importacion/:tipo?confirmar=`
+  (multipart `archivo`, 5 MB) → `{total, creados, actualizados, sinCambios,
+  errores[{fila, columna?, mensaje}], confirmado}`.
+  Review RDD: risk high, review_due; preflight bloqueado pidiendo selección de
+  untracked `.atl/` (formato JSON no documentado) → **unavailable**, pendiente.
+  Follow-up: `planificarProcesos` (~310 líneas) conviene partirlo.
+- T2: `npx tsc -b` OK, `npm run lint` limpio, `npx vitest run` 12 archivos /
+  43 tests OK. Acceso: botón "Cargar datos" en el header de `MapaFrentesPage`
+  y "Carga masiva" en `ProcesosTab` (solo ADMIN/EDITOR). No verificado en
+  navegador contra backend real (no levanta localmente, ver Fase 4).
+  Follow-up: `descargarArchivo.ts` duplica el parser de Content-Disposition de
+  `FrenteDetallePage`.

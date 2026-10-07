@@ -9,6 +9,7 @@ import { ProcesoFichaPage } from '@/features/procesos/ProcesoFichaPage'
 import { AdminLayout } from '@/features/admin/AdminLayout'
 import { UsuariosPage } from '@/features/admin/UsuariosPage'
 import { VinculosPage } from '@/features/admin/VinculosPage'
+import { CargaDatosPage } from '@/features/carga/CargaDatosPage'
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -50,6 +51,14 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <ProcesoFichaPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/carga',
+    element: (
+      <ProtectedRoute rolesPermitidos={['ADMIN', 'EDITOR']}>
+        <CargaDatosPage />
       </ProtectedRoute>
     ),
   },
