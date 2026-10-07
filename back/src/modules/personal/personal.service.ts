@@ -59,7 +59,8 @@ export class PersonalService {
     return (await this.corteRepository.findOne({ where: { id } }))!;
   }
 
-  private async verificarScope(
+  // Público: la importación Excel aplica la misma regla fila por fila.
+  async verificarScope(
     tipoPersonalId: number,
     actor: UsuarioAutenticado,
   ): Promise<void> {

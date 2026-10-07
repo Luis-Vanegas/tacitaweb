@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import {
   ProcesoContratacion,
   TipoProceso,
@@ -82,44 +82,51 @@ export class ProcesosService {
   }
 
   async crear(dto: CrearProcesoDto, actorId: string) {
-    const id = await ejecutarConAuditoria(
-      this.dataSource,
-      actorId,
-      async (manager) => {
-        const proceso = manager.create(ProcesoContratacion, {
-          actividadId: dto.actividadId,
-          estadoId: dto.estadoId,
-          contratistaId: dto.contratistaId ?? null,
-          tipo: dto.tipo ?? TipoProceso.PRINCIPAL,
-          procesoSupervisadoId: dto.procesoSupervisadoId ?? null,
-          numeroContrato: dto.numeroContrato ?? null,
-          numeroNecesidad: dto.numeroNecesidad ?? null,
-          fechaInicio: dto.fechaInicio ?? null,
-          fechaTerminacion: dto.fechaTerminacion ?? null,
-          linkSecop: dto.linkSecop ?? null,
-          observacion: dto.observacion ?? null,
-          createdBy: actorId,
-          updatedBy: actorId,
-        });
-        const guardado = await manager.save(proceso);
-
-        if (dto.frentes?.length) {
-          await manager.save(
-            FrenteProceso,
-            dto.frentes.map((frenteId) =>
-              manager.create(FrenteProceso, {
-                frenteId,
-                procesoId: guardado.id,
-                criterio: CriterioFrenteProceso.MANUAL,
-              }),
-            ),
-          );
-        }
-        return guardado.id;
-      },
+    const id = await ejecutarConAuditoria(this.dataSource, actorId, (manager) =>
+      this.insertarProceso(manager, dto, actorId),
     );
 
     return this.obtenerDetalle(id);
+  }
+
+  // Inserta el proceso (y sus vínculos MANUAL a frentes) dentro de una
+  // transacción ya abierta. Público para que la importación Excel escriba
+  // muchos procesos en una sola transacción reutilizando esta misma lógica.
+  async insertarProceso(
+    manager: EntityManager,
+    dto: CrearProcesoDto,
+    actorId: string,
+  ): Promise<string> {
+    const proceso = manager.create(ProcesoContratacion, {
+      actividadId: dto.actividadId,
+      estadoId: dto.estadoId,
+      contratistaId: dto.contratistaId ?? null,
+      tipo: dto.tipo ?? TipoProceso.PRINCIPAL,
+      procesoSupervisadoId: dto.procesoSupervisadoId ?? null,
+      numeroContrato: dto.numeroContrato ?? null,
+      numeroNecesidad: dto.numeroNecesidad ?? null,
+      fechaInicio: dto.fechaInicio ?? null,
+      fechaTerminacion: dto.fechaTerminacion ?? null,
+      linkSecop: dto.linkSecop ?? null,
+      observacion: dto.observacion ?? null,
+      createdBy: actorId,
+      updatedBy: actorId,
+    });
+    const guardado = await manager.save(proceso);
+
+    if (dto.frentes?.length) {
+      await manager.save(
+        FrenteProceso,
+        dto.frentes.map((frenteId) =>
+          manager.create(FrenteProceso, {
+            frenteId,
+            procesoId: guardado.id,
+            criterio: CriterioFrenteProceso.MANUAL,
+          }),
+        ),
+      );
+    }
+    return guardado.id;
   }
 
   async actualizar(
@@ -149,31 +156,42 @@ export class ProcesosService {
   ) {
     await this.verificarScope(id, actor);
 
-    await ejecutarConAuditoria(this.dataSource, actor.id, async (manager) => {
-      const resultado = await manager.update(ProcesoContratacion, id, {
-        estadoId: dto.estadoId,
-        updatedBy: actor.id,
-      });
-      if (!resultado.affected) {
-        throw new NotFoundException('Proceso no encontrado');
-      }
-
-      // Un solo request, una sola transacción: el cambio de estado y su nota
-      // de bitácora se comitean o se revierten juntos.
-      await manager.save(
-        Seguimiento,
-        manager.create(Seguimiento, {
-          procesoId: id,
-          fecha: dto.fecha ?? hoyIso(),
-          nota: dto.nota,
-          estadoId: dto.estadoId,
-          autorId: actor.id,
-          origen: OrigenSeguimiento.APP,
-        }),
-      );
-    });
+    await ejecutarConAuditoria(this.dataSource, actor.id, (manager) =>
+      this.aplicarCambioEstado(manager, id, dto, actor.id),
+    );
 
     return this.obtenerDetalle(id);
+  }
+
+  // Cambia el estado y deja su nota en la bitácora dentro de una transacción
+  // ya abierta: se comitean o se revierten juntos. La importación Excel lo
+  // reutiliza con origen EXCEL.
+  async aplicarCambioEstado(
+    manager: EntityManager,
+    id: string,
+    dto: CambiarEstadoProcesoDto,
+    actorId: string,
+    origen: OrigenSeguimiento = OrigenSeguimiento.APP,
+  ): Promise<void> {
+    const resultado = await manager.update(ProcesoContratacion, id, {
+      estadoId: dto.estadoId,
+      updatedBy: actorId,
+    });
+    if (!resultado.affected) {
+      throw new NotFoundException('Proceso no encontrado');
+    }
+
+    await manager.save(
+      Seguimiento,
+      manager.create(Seguimiento, {
+        procesoId: id,
+        fecha: dto.fecha ?? hoyIso(),
+        nota: dto.nota,
+        estadoId: dto.estadoId,
+        autorId: actorId,
+        origen,
+      }),
+    );
   }
 
   async eliminar(id: string, actorId: string): Promise<void> {
@@ -188,7 +206,8 @@ export class ProcesosService {
   // FrenteScopeGuard (común) resuelve el frente desde :slug/:frenteId en la
   // URL; acá el recurso es el propio proceso, así que primero se resuelven
   // los frentes a los que pertenece y luego se aplica la misma regla EDITOR.
-  private async verificarScope(
+  // Público: la importación Excel aplica la misma regla fila por fila.
+  async verificarScope(
     procesoId: string,
     actor: UsuarioAutenticado,
   ): Promise<void> {

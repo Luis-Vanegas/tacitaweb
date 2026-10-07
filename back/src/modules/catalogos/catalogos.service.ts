@@ -11,6 +11,22 @@ import { Dependencia } from '@/database/entities/dependencia.entity';
 import { Proyecto } from '@/database/entities/proyecto.entity';
 import { Contratista } from '@/database/entities/contratista.entity';
 import { CategoriaActividad } from '@/database/entities/categoria-actividad.entity';
+import { TipoPersonal } from '@/database/entities/tipo-personal.entity';
+import { Actividad } from '@/database/entities/actividad.entity';
+
+export interface TipoPersonalCatalogo {
+  id: number;
+  nombre: string;
+}
+
+// Plana (sin la entidad completa): el front la usa en selects agrupados por
+// dependencia y la importación Excel la usa para resolver (dependencia, actividad).
+export interface ActividadCatalogo {
+  id: number;
+  nombre: string;
+  dependenciaId: number;
+  dependencia: string;
+}
 
 export interface CatalogosResponse {
   estados: EstadoProceso[];
@@ -18,6 +34,8 @@ export interface CatalogosResponse {
   proyectos: Proyecto[];
   contratistas: Contratista[];
   categoriasActividad: CategoriaActividad[];
+  tiposPersonal: TipoPersonalCatalogo[];
+  actividades: ActividadCatalogo[];
 }
 
 const TTL_MS = 5 * 60 * 1000;
@@ -37,7 +55,16 @@ export class CatalogosService {
     private readonly contratistaRepository: Repository<Contratista>,
     @InjectRepository(CategoriaActividad)
     private readonly categoriaActividadRepository: Repository<CategoriaActividad>,
+    @InjectRepository(TipoPersonal)
+    private readonly tipoPersonalRepository: Repository<TipoPersonal>,
+    @InjectRepository(Actividad)
+    private readonly actividadRepository: Repository<Actividad>,
   ) {}
+
+  // Para quien escriba catálogos en este mismo proceso y no quiera esperar el TTL.
+  invalidar(): void {
+    this.cache = null;
+  }
 
   async obtener(): Promise<CatalogosResponse> {
     const ahora = Date.now();
@@ -51,6 +78,8 @@ export class CatalogosService {
       proyectos,
       contratistas,
       categoriasActividad,
+      tiposPersonal,
+      actividades,
     ] = await Promise.all([
       this.estadoRepository.find({ order: { orden: 'ASC' } }),
       this.dependenciaRepository.find({
@@ -63,6 +92,14 @@ export class CatalogosService {
       }),
       this.contratistaRepository.find({ order: { nombre: 'ASC' } }),
       this.categoriaActividadRepository.find({ order: { orden: 'ASC' } }),
+      this.tipoPersonalRepository.find({
+        where: { activo: true },
+        order: { nombre: 'ASC' },
+      }),
+      this.actividadRepository.find({
+        relations: ['dependencia'],
+        order: { nombre: 'ASC' },
+      }),
     ]);
 
     const valor: CatalogosResponse = {
@@ -71,6 +108,13 @@ export class CatalogosService {
       proyectos,
       contratistas,
       categoriasActividad,
+      tiposPersonal: tiposPersonal.map((t) => ({ id: t.id, nombre: t.nombre })),
+      actividades: actividades.map((a) => ({
+        id: a.id,
+        nombre: a.nombre,
+        dependenciaId: a.dependenciaId,
+        dependencia: a.dependencia.nombre,
+      })),
     };
     this.cache = { valor, expiraEn: ahora + TTL_MS };
     return valor;
