@@ -21,8 +21,9 @@ function mensajeError(error: unknown): string {
   return axiosError.response?.data?.message ?? 'No se pudo iniciar sesión.'
 }
 
-// Demo a directivos: entra directo al menú con un usuario fijo (rol LECTOR)
-// en vez de mostrar el login. Sin estas env vars, el comportamiento es el
+// Demo a directivos: entra directo al menú con un usuario fijo ("Visor", rol
+// EDITOR con todos los frentes desde la migración 015) en vez de mostrar el
+// login. Sin estas env vars, el comportamiento es el
 // normal (login manual). Ver front/.env.example.
 const DEMO_EMAIL = import.meta.env.VITE_DEMO_EMAIL as string | undefined
 const DEMO_PASSWORD = import.meta.env.VITE_DEMO_PASSWORD as string | undefined
