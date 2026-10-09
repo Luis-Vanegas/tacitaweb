@@ -1,14 +1,8 @@
 import { useEffect, useState } from 'react'
-import dayjs from 'dayjs'
+import { useNavigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-import Alert from '@mui/material/Alert'
 import Collapse from '@mui/material/Collapse'
-import CircularProgress from '@mui/material/CircularProgress'
-import Dialog from '@mui/material/Dialog'
-import DialogActions from '@mui/material/DialogActions'
-import DialogContent from '@mui/material/DialogContent'
-import DialogTitle from '@mui/material/DialogTitle'
 import IconButton from '@mui/material/IconButton'
 import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
@@ -17,68 +11,32 @@ import AddIcon from '@mui/icons-material/Add'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined'
 import { tokens } from '@/app/theme/tokens'
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/redux'
 import { EstadoChip } from '@/shared/components/EstadoChip'
 import { formatearFecha } from '@/shared/utils/fecha'
-import type { Compromiso } from '@/shared/types'
-import { CompromisoDialog } from './CompromisoDialog'
-import { ESTADOS_COMPROMISO as ESTADOS, payloadCompromiso, type CompromisoFormValues } from './compromiso'
-import {
-  compromisoActualizarRequest,
-  compromisoCrearRequest,
-  compromisoEliminarRequest,
-  compromisosRequest,
-  limpiarCompromisoMutacion,
-} from './compromisosSlice'
+import { ESTADOS_COMPROMISO as ESTADOS, esVencido } from './compromiso'
+import { compromisosRequest } from './compromisosSlice'
+import { useEdicionCompromisos } from './useEdicionCompromisos'
 
 // Lista desplegable de compromisos del proyecto (hoja "Compromisos" del Excel).
 // Lista y no tabla: en el celular una tabla de 5 columnas no entra. El avance
 // de gestión va como línea secundaria solo si existe, para no alargar la lista.
-// ADMIN/EDITOR crean y editan; solo ADMIN elimina (mismos @Roles del backend).
+// La vista completa (filtros, todos los campos) está en /compromisos.
 export function CompromisosPanel() {
   const dispatch = useAppDispatch()
-  const { estado, items, mutacion } = useAppSelector((s) => s.compromisos)
-  const rol = useAppSelector((s) => s.auth.usuario?.rol)
-  const puedeEditar = rol === 'ADMIN' || rol === 'EDITOR'
-  const puedeEliminar = rol === 'ADMIN'
+  const navigate = useNavigate()
+  const { estado, items } = useAppSelector((s) => s.compromisos)
+  const { puedeEditar, puedeEliminar, crear, editar, eliminar, dialogos } = useEdicionCompromisos()
   const [abierto, setAbierto] = useState(false)
-  // undefined = cerrado; null = crear; Compromiso = editar ese.
-  const [enEdicion, setEnEdicion] = useState<Compromiso | null | undefined>(undefined)
-  const [aEliminar, setAEliminar] = useState<Compromiso | null>(null)
 
   useEffect(() => {
     dispatch(compromisosRequest())
   }, [dispatch])
 
-  // Tras una mutación exitosa se cierran los diálogos y se vuelve a pedir la
-  // lista; si falla, el error se muestra dentro del diálogo, que sigue abierto.
-  useEffect(() => {
-    if (mutacion.estado === 'succeeded') {
-      setEnEdicion(undefined)
-      setAEliminar(null)
-      dispatch(limpiarCompromisoMutacion())
-      dispatch(compromisosRequest())
-    }
-  }, [mutacion.estado, dispatch])
-
-  function cerrarDialogos() {
-    setEnEdicion(undefined)
-    setAEliminar(null)
-    dispatch(limpiarCompromisoMutacion())
-  }
-
-  function guardar(valores: CompromisoFormValues) {
-    if (enEdicion) {
-      dispatch(compromisoActualizarRequest({ id: enEdicion.id, payload: payloadCompromiso(valores, true) }))
-    } else {
-      dispatch(compromisoCrearRequest(payloadCompromiso(valores, false)))
-    }
-  }
-
   const pendientes = items.filter((c) => c.estado !== 'CUMPLIDO').length
-  const guardando = mutacion.estado === 'loading'
   // Sin compromisos, el LECTOR no ve nada; ADMIN/EDITOR sí, para crear el primero.
   if (items.length === 0 && (estado !== 'succeeded' || !puedeEditar)) return null
 
@@ -95,8 +53,11 @@ export function CompromisosPanel() {
       >
         Compromisos · {pendientes} {pendientes === 1 ? 'pendiente' : 'pendientes'}
       </Button>
+      <Button size="small" startIcon={<OpenInNewIcon />} onClick={() => navigate('/compromisos')} sx={{ color: tokens.color.onNavy }}>
+        Ver todos
+      </Button>
       {puedeEditar && (
-        <Button size="small" startIcon={<AddIcon />} onClick={() => setEnEdicion(null)} sx={{ color: tokens.color.onNavy }}>
+        <Button size="small" startIcon={<AddIcon />} onClick={crear} sx={{ color: tokens.color.onNavy }}>
           Nuevo compromiso
         </Button>
       )}
@@ -116,7 +77,7 @@ export function CompromisosPanel() {
           }}
         >
           {items.map((c, i) => {
-            const vencido = c.estado !== 'CUMPLIDO' && c.fechaCumplimiento !== null && dayjs(c.fechaCumplimiento).isBefore(dayjs(), 'day')
+            const vencido = esVencido(c)
             return (
               <Box
                 component="li"
@@ -139,14 +100,14 @@ export function CompromisosPanel() {
                     <EstadoChip nombre={ESTADOS[c.estado].nombre} color={ESTADOS[c.estado].color} />
                     {puedeEditar && (
                       <Tooltip title="Editar">
-                        <IconButton size="small" aria-label={`Editar compromiso: ${c.descripcion}`} onClick={() => setEnEdicion(c)}>
+                        <IconButton size="small" aria-label={`Editar compromiso: ${c.descripcion}`} onClick={() => editar(c)}>
                           <EditOutlinedIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     )}
                     {puedeEliminar && (
                       <Tooltip title="Eliminar">
-                        <IconButton size="small" aria-label={`Eliminar compromiso: ${c.descripcion}`} onClick={() => setAEliminar(c)}>
+                        <IconButton size="small" aria-label={`Eliminar compromiso: ${c.descripcion}`} onClick={() => eliminar(c)}>
                           <DeleteOutlineIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
@@ -159,41 +120,7 @@ export function CompromisosPanel() {
         </Box>
       </Collapse>
 
-      {puedeEditar && (
-        <CompromisoDialog
-          open={enEdicion !== undefined}
-          compromiso={enEdicion ?? null}
-          guardando={guardando}
-          error={mutacion.error}
-          onGuardar={guardar}
-          onCancelar={cerrarDialogos}
-        />
-      )}
-
-      <Dialog open={aEliminar !== null} onClose={guardando ? undefined : cerrarDialogos} fullWidth maxWidth="xs">
-        <DialogTitle>Eliminar compromiso</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2}>
-            {mutacion.error && <Alert severity="error">{mutacion.error}</Alert>}
-            <Typography variant="body2">
-              ¿Eliminar «{aEliminar?.descripcion}»? Esta acción no se puede deshacer.
-            </Typography>
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={cerrarDialogos} disabled={guardando}>
-            Cancelar
-          </Button>
-          <Button
-            color="error"
-            variant="contained"
-            disabled={guardando}
-            onClick={() => aEliminar && dispatch(compromisoEliminarRequest(aEliminar.id))}
-          >
-            {guardando ? <CircularProgress size={20} color="inherit" /> : 'Eliminar'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {dialogos}
     </Box>
   )
 }

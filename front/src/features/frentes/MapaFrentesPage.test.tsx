@@ -99,4 +99,9 @@ describe('MapaFrentesPage', () => {
     renderPagina()
     expect(screen.getByRole('button', { name: 'Personal' })).toBeInTheDocument()
   })
+
+  it('muestra el acceso a compromisos para cualquier rol', () => {
+    renderPagina()
+    expect(screen.getByRole('button', { name: 'Compromisos' })).toBeInTheDocument()
+  })
 })

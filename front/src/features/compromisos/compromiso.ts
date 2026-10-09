@@ -11,6 +11,21 @@ export const ESTADOS_COMPROMISO: Record<EstadoCompromiso, { nombre: string; colo
   CUMPLIDO: { nombre: 'Cumplido', color: tokens.color.success },
 }
 
+// Vencido = sin cumplir y con fecha de cumplimiento anterior a hoy (por día,
+// no por hora: lo que vence hoy aún está a tiempo). Una sola regla para el
+// panel del mapa y la página, así los dos cuentan lo mismo.
+export function esVencido(c: Pick<Compromiso, 'estado' | 'fechaCumplimiento'>, hoy = dayjs()): boolean {
+  return c.estado !== 'CUMPLIDO' && c.fechaCumplimiento !== null && dayjs(c.fechaCumplimiento).isBefore(hoy, 'day')
+}
+
+// Orden de atención: vencidos primero, luego por fecha de cumplimiento (sin
+// fecha al final) y los cumplidos al fondo, porque ya no piden acción.
+export function ordenarCompromisos(items: Compromiso[], hoy = dayjs()): Compromiso[] {
+  const grupo = (c: Compromiso) => (c.estado === 'CUMPLIDO' ? 2 : esVencido(c, hoy) ? 0 : 1)
+  const fecha = (c: Compromiso) => (c.fechaCumplimiento ? dayjs(c.fechaCumplimiento).valueOf() : Number.POSITIVE_INFINITY)
+  return [...items].sort((a, b) => grupo(a) - grupo(b) || fecha(a) - fecha(b) || a.id - b.id)
+}
+
 export interface CompromisoFormValues {
   descripcion: string
   estado: EstadoCompromiso
