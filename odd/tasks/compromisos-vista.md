@@ -22,3 +22,5 @@ editables según rol.
 - Rama `feat/compromisos-vista`.
 - T1: lint OK, `npx vitest run` 16 archivos / 66 tests OK, `tsc -b` OK.
   Pendiente: deploy manual del backend en Netlify (autorización del usuario).
+- 2026-10-09: backend publicado en Netlify (deploy 6ac912c0ad3673bd289cac99, ready).
+  `/personal`, `/compromisos`, `/importacion/plantilla/procesos` → 401 (existen).
