@@ -6,6 +6,7 @@ import { MapaFrentesPage } from '@/features/frentes/MapaFrentesPage'
 import { FrenteDetallePage } from '@/features/frentes/FrenteDetallePage'
 import { GeneralPage } from '@/features/general/GeneralPage'
 import { PersonalGeneralPage } from '@/features/personal/PersonalGeneralPage'
+import { CompromisosPage } from '@/features/compromisos/CompromisosPage'
 import { ProcesoFichaPage } from '@/features/procesos/ProcesoFichaPage'
 import { AdminLayout } from '@/features/admin/AdminLayout'
 import { UsuariosPage } from '@/features/admin/UsuariosPage'
@@ -44,6 +45,14 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <PersonalGeneralPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/compromisos',
+    element: (
+      <ProtectedRoute>
+        <CompromisosPage />
       </ProtectedRoute>
     ),
   },

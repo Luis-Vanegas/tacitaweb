@@ -3,6 +3,7 @@ import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
 import { combineReducers, configureStore, type Middleware, type UnknownAction } from '@reduxjs/toolkit'
+import { MemoryRouter } from 'react-router-dom'
 import { ThemeProvider } from '@mui/material/styles'
 import { theme } from '@/app/theme/theme'
 import authReducer from '@/features/auth/authSlice'
@@ -48,7 +49,9 @@ function renderPanel(rol: RolUsuario | null, items: Compromiso[] = [compromiso])
   render(
     <Provider store={store}>
       <ThemeProvider theme={theme}>
-        <CompromisosPanel />
+        <MemoryRouter>
+          <CompromisosPanel />
+        </MemoryRouter>
       </ThemeProvider>
     </Provider>,
   )

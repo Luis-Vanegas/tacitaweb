@@ -12,6 +12,7 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
+import AssignmentTurnedInOutlinedIcon from '@mui/icons-material/AssignmentTurnedInOutlined'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import CloseIcon from '@mui/icons-material/Close'
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined'
@@ -109,7 +110,8 @@ export function MapaFrentesPage() {
         pb: 4,
       }}
     >
-      <Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={1.5} sx={{ maxWidth: 1440, mx: 'auto' }}>
+      {/* flexWrap: con cuatro botones el header ya no entra en una línea en celular. */}
+      <Stack direction="row" justifyContent="flex-end" alignItems="center" flexWrap="wrap" useFlexGap spacing={1.5} sx={{ maxWidth: 1440, mx: 'auto' }}>
         <Button
           size="small"
           variant="outlined"
@@ -127,6 +129,15 @@ export function MapaFrentesPage() {
           sx={{ color: tokens.color.onNavy, borderColor: 'rgba(255,255,255,0.4)' }}
         >
           Personal
+        </Button>
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<AssignmentTurnedInOutlinedIcon />}
+          onClick={() => navigate('/compromisos')}
+          sx={{ color: tokens.color.onNavy, borderColor: 'rgba(255,255,255,0.4)' }}
+        >
+          Compromisos
         </Button>
         {(usuario?.rol === 'ADMIN' || usuario?.rol === 'EDITOR') && (
           <Button
